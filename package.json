@@ -1,0 +1,42 @@
+{
+  "name": "raise-dashboard-2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "webpack serve --open",
+    "build": "webpack --mode production"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mzigi/RAISE-Dashboard-2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Mzigi/RAISE-Dashboard-2/issues"
+  },
+  "homepage": "https://github.com/Mzigi/RAISE-Dashboard-2#readme",
+  "dependencies": {
+    "css-loader": "^7.1.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "style-loader": "^4.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.9",
+    "@babel/preset-env": "^7.26.9",
+    "@babel/preset-react": "^7.26.3",
+    "@babel/preset-typescript": "^7.26.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "babel-loader": "^9.2.1",
+    "html-webpack-plugin": "^5.6.3",
+    "typescript": "^5.7.3",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.0"
+  }
+}
