@@ -8,7 +8,7 @@ import { mat4 } from "wgpu-matrix";
 let mouseDiff = new Vector2(0,0);
 let isMouseDown: boolean = false;
 const mouseSensitivity = 0.3;
-let cameraZoom: number = 2;
+let cameraZoom: number = 3;
 
 let lowerBound = new Vector3(-1000,0,-1000);
 let upperBound = new Vector3(1000,1000,1000);
@@ -103,13 +103,15 @@ function prepareCircle3D(canvas: HTMLCanvasElement, context: CanvasRenderingCont
     let screenPos: Vector3 = vec3ToScreen(viewProjMat, resolution, pos);
     if (screenPos.z >= camera.nearZ) {
         if (!zAffected) {
-            screenPos.z = 1 * canvas.width;
+            screenPos.z = 1;
         }
 
+        let actualSize = radius / screenPos.z;
+
         if (zAffected) {
-            screenPos.z *= canvas.width;
+            actualSize *= canvas.width;
         }
-        context.arc(screenPos.x, screenPos.y, radius / screenPos.z, 0, rad(360));
+        context.arc(screenPos.x, screenPos.y, actualSize, 0, rad(360));
     }
 }
 
@@ -180,7 +182,7 @@ export class GraphDescription3 {
     }
 }
 
-function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, widgetName: string, graphDescs: GraphDescription3[]) {
+function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, widgetName: string, graphDescs: GraphDescription3[], markedPoints: Vector3[]) {
     if (canvas.width != canvas.clientWidth || canvas.height != canvas.clientHeight) {
         canvas.width = canvas.clientWidth
         canvas.height = canvas.clientHeight
@@ -311,6 +313,16 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
         //drawText3D(canvas, context, camera, viewProjMat, resolution, new Vector3(graphWidth - xDist + (xSidePositive ? -textOffset : textOffset)*2,yHeight + 0.01 * sign(yHeight),stepX * i + textOffset / (i+1)), textWidth, numStrZ, true);
     }
 
+    //draw marked points
+    for (let markedPoint of markedPoints) {
+        let mappedMarkedPoint = markedPoint.clone();
+        mappedMarkedPoint.x = mapNum(mappedMarkedPoint.x, lowerBound.x, upperBound.x, 0, graphWidth);
+        mappedMarkedPoint.y = mapNum(mappedMarkedPoint.y, lowerBound.y, upperBound.y, graphHeight, 0);
+        mappedMarkedPoint.z = mapNum(mappedMarkedPoint.z, lowerBound.z, upperBound.z, 0, graphWidth);
+
+        drawText3D(canvas, context, camera, viewProjMat, resolution, mappedMarkedPoint, 0.1, "/|\\", true, "#f5d142")
+    }
+
     //draw the graph itself
     for (let graphDesc of graphDescs) {
         context.strokeStyle = graphDesc.strokeStyle;
@@ -342,8 +354,14 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
         let endVal = graphDesc.values[graphDesc.values.length - 1]
 
         if (endVal) {
+            //console.log(endVal);
+            let mappedEndVal = endVal.clone();
+            mappedEndVal.x = mapNum(mappedEndVal.x, lowerBound.x, upperBound.x, 0, graphWidth);
+            mappedEndVal.y = mapNum(mappedEndVal.y, lowerBound.y, upperBound.y, graphHeight, 0);
+            mappedEndVal.z = mapNum(mappedEndVal.z, lowerBound.z, upperBound.z, 0, graphWidth);
+
             context.beginPath();
-            prepareCircle3D(canvas, context, camera, viewProjMat, resolution, endVal, 100, false);
+            prepareCircle3D(canvas, context, camera, viewProjMat, resolution, mappedEndVal, 0.05, true);
             context.fill();
         }
     }
@@ -384,7 +402,7 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
     mouseDiff.x = 0;
     mouseDiff.y = 0;
     lastAnimationFrameId = window.requestAnimationFrame(() => {
-        render(camera, canvas, context, widgetName, graphDescs);
+        render(camera, canvas, context, widgetName, graphDescs, markedPoints);
     })
 }
 
@@ -417,7 +435,7 @@ function wheelListener(evt: WheelEvent) {
     cameraZoom = clamp(cameraZoom + evt.deltaY / 500, 0.2, 3.2);
 }
 
-function CanvasGraph3DWidget({ widgetName = "", graphDescs = [] } : { widgetName?: string, graphDescs?: GraphDescription3[] }) {
+function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], markedPoints = [] } : { widgetName?: string, graphDescs?: GraphDescription3[], markedPoints?: Vector3[] }) {
     const canvasRef = useRef(null); 
     const cameraRef = useRef(new Camera(new Vector3(0.7, 0, 5.29)));
 
@@ -437,7 +455,7 @@ function CanvasGraph3DWidget({ widgetName = "", graphDescs = [] } : { widgetName
         if (!context) return () => {};
         
         updateOrbitalCamera(camera, new Vector2(0,0));
-        render(camera, canvas, context, widgetName, graphDescs);
+        render(camera, canvas, context, widgetName, graphDescs, markedPoints);
 
         return () => {
             canvas.removeEventListener("mousemove", mouseMoveListener);

@@ -15,9 +15,9 @@ export default function TopBar({ serialConnect, serialConnectionStatus, serialCl
             <RadialButton onClick={downloadLog}>
                 Download Log
             </RadialButton>
-            <RadialButton onClick={saveLog}>
+            {serialConnectionStatus != "connected" ? <RadialButton onClick={saveLog}>
                 Set Log save Location
-            </RadialButton>
+            </RadialButton> : null}
             <Connection serialConnect={serialConnect} serialConnectionStatus={serialConnectionStatus} serialClose={serialClose}/>
         </div>
     </div>

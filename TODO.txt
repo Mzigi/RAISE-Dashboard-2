@@ -2,3 +2,10 @@
 - Open and close button
 o Stop canvas from growing
 - Triangulation
+    - Make RSSI_START not constant
+- 3d graph
+    - Make grid lines come from lastVal
+    - Show position when hovering over point
+    - Allow choosing from various description
+- Importing log
+- Check if longitude and latitude has enough decimal points when printed in Serial

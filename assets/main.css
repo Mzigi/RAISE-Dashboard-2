@@ -78,6 +78,15 @@ button {
     box-shadow: 0px 0px 5px 0px var(--shadow);
 
     margin: 0 10px 0 10px;
+
+    transition-property: transform;
+    transition-duration: 30ms;
+    transition-timing-function: ease-in;
+}
+
+.radialButton:active {
+    transform: scale(92%);
+    background-color: #ccc;
 }
 
 .topbar-right {
@@ -86,10 +95,6 @@ button {
     padding: 0;
     align-items: center;
     display: flex;
-}
-
-.topbar-connection:active {
-    background-color: #ccc;
 }
 
 .topbar-connection-disconnect {
@@ -161,6 +166,7 @@ button {
 }
 
 .widget {
+    max-height: 100%;
     padding: 1em;
 
     background-color: var(--blank-1);
@@ -221,4 +227,66 @@ button {
 
 .graph-widget-right-list > li {
     display: inline-block;
+}
+
+.status {
+    display: flex;
+    flex-direction: row;
+}
+
+.status-divider {
+    height:100%;
+    width: 1px;
+    background-color: var(--blank-2);
+}
+
+.status-side {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.status-side > ul {
+    list-style-type: none;
+
+    margin: 0;
+    height: 100%;
+    padding: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.status-left > ul > li {
+    height: 3em;
+}
+
+.console-widget {
+    display: flex;
+    flex-direction: column;
+}
+
+.console {
+    flex: 1;
+
+    overflow: auto;
+    width: 100%;
+    height: 100%;
+
+    border-radius: 0.5em;
+
+    background-color: var(--dark-0);
+    color: var(--blank-0);
+}
+
+.console > ul {
+    height: 0;
+    max-height: 1080px;
+
+    list-style-type: none;
+
+    margin: 0;
+    padding: 0;
 }

@@ -1,3 +1,5 @@
+import { Vector2 } from "../rendering/core/model";
+
 export type SerialConnectionStatus = "connected" | "connecting" | "disconnected"
 
 /*
@@ -136,6 +138,10 @@ export default class SerialConnectionData {
     getCurrentGroup(): SerialDataGroup | undefined {
         //return this.serialData[this.serialData.length - 1];
         return this.incompleteGroup
+    }
+    
+    getLastGroup(): SerialDataGroup | undefined {
+        return this.serialData[this.serialData.length - 1];
     }
 
     getLineValues(line: string): [string, number] {

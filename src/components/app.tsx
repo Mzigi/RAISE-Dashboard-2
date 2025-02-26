@@ -4,6 +4,7 @@ import TopBar from "./topbar";
 import { SerialContext } from "../common/serialContext";
 import SerialConnectionData, { SerialConnectionStatus } from "../common/serialConnectionData";
 import Dashboard from "./dashboard";
+import { Vector3 } from "../rendering/core/model";
 
 declare global {
     interface Window {
@@ -30,6 +31,7 @@ export default function App(): React.JSX.Element {
     let [serialConnectionStatus, setSerialConnectionStatus] = useState<SerialConnectionStatus>("disconnected");
 
     let [logHandle, setLogHandle] = useState<FileSystemWritableFileStream | null>(null);
+    let [stationPositions, setStationPositions] = useState<[Vector3,Vector3,Vector3]>([new Vector3(0,0,0), new Vector3(-1000,0,0), new Vector3(-500,0,500)]);
 
     useEffect(() => {
         if (!serialData.port?.connected) {
@@ -136,6 +138,16 @@ export default function App(): React.JSX.Element {
         }
     }
 
+    function sendSerial(data: string) {
+        if (serialData.port && serialData.port.writable) {
+            const writer = serialData.port.writable.getWriter();
+            writer.write(new TextEncoder().encode(data));
+            writer.releaseLock();
+        } else {
+            console.warn(`Serial port not available or writeable (${data})`)
+        }
+    }
+
     function downloadLog() {
         saveByteArray([serialData.log], new Date().toLocaleDateString().replaceAll(".", "_") + "-" + new Date().toLocaleTimeString().replaceAll(":","_") + "_Log.txt")
     }
@@ -147,7 +159,7 @@ export default function App(): React.JSX.Element {
     return (<>
         <SerialContext.Provider value={serialData}>
             <TopBar serialConnect={serialConnect} serialConnectionStatus={serialConnectionStatus} serialClose={serialClose} saveLog={saveLog} downloadLog={downloadLog}/>
-            <Dashboard serialData={serialData.serialData}/>
+            <Dashboard serialData={serialData.serialData} stationPositions={stationPositions} sendSerial={sendSerial} serialLog={serialData.log}/>
         </SerialContext.Provider>
     </>);
 }
