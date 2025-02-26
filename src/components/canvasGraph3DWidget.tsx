@@ -433,6 +433,7 @@ function mouseUpListener(evt: MouseEvent) {
 
 function wheelListener(evt: WheelEvent) {
     cameraZoom = clamp(cameraZoom + evt.deltaY / 500, 0.2, 3.2);
+    evt.preventDefault();
 }
 
 function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], markedPoints = [] } : { widgetName?: string, graphDescs?: GraphDescription3[], markedPoints?: Vector3[] }) {
