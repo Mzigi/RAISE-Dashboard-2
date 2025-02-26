@@ -1,5 +1,153 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import TopBar from "./topbar";
+
+import { SerialContext } from "../common/serialContext";
+import SerialConnectionData, { SerialConnectionStatus } from "../common/serialConnectionData";
+import Dashboard from "./dashboard";
+
+declare global {
+    interface Window {
+        showSaveFilePicker: (options: any) => Promise<FileSystemFileHandle>;
+    }
+}
+
+var saveByteArray = (function () {
+    var a = document.createElement("a");
+    document.body.appendChild(a);
+    a.setAttribute("style","display: none;")
+    return function (data: BlobPart[], name: string) {
+        var blob = new Blob(data, {type: "octet/stream"}),
+            url = window.URL.createObjectURL(blob);
+        a.href = url;
+        a.download = name;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    };
+}());
 
 export default function App(): React.JSX.Element {
-    return <div>Hello, new worlds!</div>;
+    let [serialData, setSerialData] = useState<SerialConnectionData>(new SerialConnectionData());
+    let [serialConnectionStatus, setSerialConnectionStatus] = useState<SerialConnectionStatus>("disconnected");
+
+    let [logHandle, setLogHandle] = useState<FileSystemWritableFileStream | null>(null);
+
+    useEffect(() => {
+        if (!serialData.port?.connected) {
+            serialData.closePort();
+            setSerialConnectionStatus("disconnected")
+        }
+        if (!serialData.reader) {
+            return;
+        }
+
+        let dataClone = serialData.clone();
+
+        if (!dataClone.reader) return;
+
+        let ignore = false;
+
+        dataClone.reader.read().then(({value, done}) => {
+            if (done) {
+                dataClone.reader = undefined;
+                return;
+            }
+            if (ignore) {
+                return
+            }
+            
+            let valueAsString = dataClone.textDecoder.decode(value)
+    
+            let newSerialData = dataClone.clone();
+    
+            newSerialData.log += valueAsString
+            if (logHandle) {
+                logHandle.write(valueAsString);
+            }
+            
+            let linesToParse = dataClone.lastLine + valueAsString
+            let splitLines = linesToParse.split("\n");
+            newSerialData.lastLine = splitLines[splitLines.length - 1]
+    
+            splitLines.pop();
+            for (let line of splitLines) {
+                newSerialData.parseLine(line);
+            }
+
+            setSerialData(newSerialData)
+        })
+        
+
+        return () => {
+            ignore = true;
+        }
+    })
+
+    async function serialConnect() {
+        if (!navigator.serial) {
+            alert("Your browser does not support serial connections. Try using Microsoft Edge.")
+        }
+
+        try {
+            let port = await navigator.serial.requestPort();
+            console.log(port.getInfo());
+
+            setSerialConnectionStatus("connecting")
+
+            await port.open({baudRate: 9600});
+            
+            let newSerialData: SerialConnectionData = serialData.clone();
+            newSerialData.port = port;
+            newSerialData.readyRead();
+
+            setSerialConnectionStatus("connected");
+            setSerialData(newSerialData);
+        } catch (error) {
+            console.warn(error);
+            setSerialConnectionStatus("disconnected");
+        }
+    }
+
+    function serialClose() {
+        let newSerialData: SerialConnectionData = serialData.clone();
+        newSerialData.closePort();
+        if (logHandle) {
+            logHandle.close();
+            setLogHandle(null);
+        }
+
+        setSerialConnectionStatus("disconnected")
+        setSerialData(newSerialData)
+    }
+
+    async function saveLog() {
+        if (!window.showSaveFilePicker) {
+            alert("Your browser does not support writing to file handles. Try using Microsoft Edge.")
+        }
+
+        try {
+            let fileHandle = await window.showSaveFilePicker({
+                "suggestedName": new Date().toLocaleDateString().replaceAll(".", "_") + "-" + new Date().toLocaleTimeString().replaceAll(":","_") + "_Log.txt"
+            })
+            let writeable = await fileHandle.createWritable();
+            writeable.write(serialData.log);
+            setLogHandle(writeable);
+        } catch (error) {
+            console.warn(error);
+        }
+    }
+
+    function downloadLog() {
+        saveByteArray([serialData.log], new Date().toLocaleDateString().replaceAll(".", "_") + "-" + new Date().toLocaleTimeString().replaceAll(":","_") + "_Log.txt")
+    }
+
+    let lastKey = 0;
+
+    (window as any)["serialData"] = serialData;
+
+    return (<>
+        <SerialContext.Provider value={serialData}>
+            <TopBar serialConnect={serialConnect} serialConnectionStatus={serialConnectionStatus} serialClose={serialClose} saveLog={saveLog} downloadLog={downloadLog}/>
+            <Dashboard serialData={serialData.serialData}/>
+        </SerialContext.Provider>
+    </>);
 }

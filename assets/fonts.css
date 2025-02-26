@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap'); /*Regular text, Regular 400*/
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap'); /*Title text, Bold 700*/
+
+/*
+.regular-text {
+    font-family: "Roboto", sans-serif;
+    font-weight: 400;
+}
+
+.title-text {
+    font-family: "Montserrat", sans-serif;
+    font-weight: 700;
+}
+*/
+
+:root {
+    --regular-font-family: "Roboto", sans-serif;
+    --regular-font-weight: 400;
+
+    --title-font-family: "Montserrat", sans-serif;
+    --title-font-weight: 700;
+}
+
+.material-icons {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;  /* Preferred icon size */
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+
+    /* Support for all WebKit browsers. */
+    -webkit-font-smoothing: antialiased;
+    /* Support for Safari and Chrome. */
+    text-rendering: optimizeLegibility;
+
+    /* Support for Firefox. */
+    -moz-osx-font-smoothing: grayscale;
+
+    /* Support for IE. */
+    font-feature-settings: 'liga';
+}

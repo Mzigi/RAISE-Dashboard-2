@@ -1,0 +1,4 @@
+- Cutoff range
+- Open and close button
+o Stop canvas from growing
+- Triangulation

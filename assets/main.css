@@ -1,3 +1,224 @@
+@import url(fonts.css);
+@import url(theme.css);
+
 body {
-    background-color: black;
+    background-color: var(--blank-0);
+
+    font-family: var(--regular-font-family);
+    font-weight: var(--regular-font-weight);
+    font-size: medium;
+
+    margin: 0;
+}
+
+#root {
+    height: 100vh;
+}
+
+.title {
+    font-family: var(--title-font-family);
+    font-weight: var(--title-font-weight);
+    font-size: xx-large;
+}
+
+.topbar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+
+    width: calc(100% - 2em);
+    height: 6%;
+    padding: 0 1em 0 1em;
+
+    background-color: var(--colored-0);
+    box-shadow: 0px 0px 10px 0px var(--dark-shadow);
+}
+
+.topbar-title-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    font-family: var(--title-font-family);
+    font-weight: var(--title-font-weight);
+
+    color: var(--blank-0);
+}
+
+.topbar-title {
+    font-size: 3.2em;
+}
+
+.topbar-title-separator {
+    font-size: 2em;
+    margin: 0 0.2em 0 0.2em;
+}
+
+.topbar-title-secondary {
+    font-size: 2em;
+}
+
+button {
+    cursor: pointer;
+}
+
+.radialButton {
+    font-family: var(--regular-font-family);
+    font-weight: var(--regular-font-weight);
+    font-size: 1.25em;
+
+    width: fit-content;
+    height: 70%;
+    padding: 0 1em 0 1em;
+
+    border-style: none;
+    background-color: #fff;
+    border-radius: 0.5em;
+    box-shadow: 0px 0px 5px 0px var(--shadow);
+
+    margin: 0 10px 0 10px;
+}
+
+.topbar-right {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+    display: flex;
+}
+
+.topbar-connection:active {
+    background-color: #ccc;
+}
+
+.topbar-connection-disconnect {
+    background-color: rgb(255,89,89);
+    color: #fff;
+}
+
+.topbar-connection-disconnect:active {
+    background-color: rgb(199, 64, 64);
+}
+
+.topbar-connection > .radialButton-circle {
+    background-color: var(--colored-1);
+}
+
+.topbar-connection-disconnect > .radialButton-circle {
+    background-color: var(--blank-0);
+}
+
+.widgets-container {
+    height: calc(94% - 20px);
+    width: calc(100% - 20px);
+    max-height: 94%;
+
+    padding: 10px;
+
+    overflow: hidden;
+
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    grid-column-gap: 10px;
+    grid-row-gap: 10px; 
+}
+
+.radialButton {
+    position: relative;
+    overflow: hidden;
+}
+
+@keyframes radialButtoncircle {
+    from {
+        width: 0%;
+        opacity: 1;
+    }
+    to {
+        width: 220%;
+        opacity: 0;
+    }
+}
+
+.radialButton-circle {
+    display: block;
+    background-color: var(--colored-1);
+    border-radius: 100%;
+    aspect-ratio: 1;
+
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    transform: translate(-50%,-50%);
+    width: 0%;
+}
+
+.radialButton-circle-anim {
+    animation-name: radialButtoncircle;
+    animation-duration: 0.5s;
+    animation-timing-function: ease-out;
+}
+
+.widget {
+    padding: 1em;
+
+    background-color: var(--blank-1);
+    border-radius: 0.5em;
+    box-shadow: 0px 0px 5px 0px var(--light-shadow);
+}
+
+.graph-widget {
+    display: flex;
+    flex-direction: row;
+
+    font-family: var(--regular-font-family);
+    font-weight: var(--regular-font-weight);
+    font-size: 1em;
+    color: #000;
+}
+
+.graph-widget-left {
+    width: 6em;
+}
+
+.graph-widget-right {
+    display: flex;
+    flex-direction: column;
+    width: calc(100% - 6em);
+}
+
+.graph-widget-left-list {
+    margin: 0;
+    height: calc(100% - 1em);
+    padding: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    list-style-type: none;
+}
+
+.graph-widget > canvas {
+    width: 99%;
+    height: 99%;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0.5em;
+}
+
+.graph-widget-right-list {
+    margin: 0;
+    padding: 0;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+    list-style-type: none;
+}
+
+.graph-widget-right-list > li {
+    display: inline-block;
 }

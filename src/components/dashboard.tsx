@@ -1,0 +1,71 @@
+import React from "react";
+import GraphWidget, { GraphDescription } from "./graphWidget";
+import SerialConnectionData, { SerialDataGroup } from "../common/serialConnectionData";
+import Graph3DWidget from "./graph3DWidget";
+import CanvasGraph3DWidget, { GraphDescription3 } from "./canvasGraph3DWidget";
+import { Vector3 } from "../rendering/core/model";
+
+const millisIndexFunc = (serialDataGroup: SerialDataGroup): number => {
+    return serialDataGroup.milliseconds / 1000;
+}
+
+export default function Dashboard({ serialData }: { serialData: SerialDataGroup[] }): React.JSX.Element {
+    //temperature
+    const analogTemperatureGD = new GraphDescription(serialData, serialData);
+    analogTemperatureGD.name = "Analog";
+    analogTemperatureGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.T2};
+    analogTemperatureGD.indexFunc = millisIndexFunc;
+
+    const bmpTemperatureGD = new GraphDescription(serialData, serialData);
+    bmpTemperatureGD.name = "BMP";
+    bmpTemperatureGD.strokeStyle = "#ff5959"
+    bmpTemperatureGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.T};
+    bmpTemperatureGD.indexFunc = millisIndexFunc;
+    bmpTemperatureGD.invalidFunc = (val: number) => {
+        return val <= -1;
+    }
+
+    //altitude
+    const gpsAltitudeGD = new GraphDescription(serialData, serialData);
+    gpsAltitudeGD.name = "GPS";
+    gpsAltitudeGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.GPS.altitude};
+    gpsAltitudeGD.indexFunc = millisIndexFunc;
+    gpsAltitudeGD.invalidFunc = (val: number) => {
+        return val <= -9999;
+    }
+
+    const bmpAltitudeGD = new GraphDescription(serialData, serialData);
+    bmpAltitudeGD.name = "BMP";
+    bmpAltitudeGD.strokeStyle = "#ff5959"
+    bmpAltitudeGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.ALT};
+    bmpAltitudeGD.indexFunc = millisIndexFunc;
+    bmpAltitudeGD.invalidFunc = (val: number) => {
+        return val <= -1;
+    }
+
+    //3d description
+    const test3dGD = new GraphDescription3(serialData, serialData);
+    test3dGD.name = "test 3d";
+    test3dGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return new Vector3(Math.sin(serialDataGroup.milliseconds / 1000) * 1000, serialDataGroup.T2, Math.cos(serialDataGroup.milliseconds / -1100) * 1000)}
+    test3dGD.indexFunc = millisIndexFunc;
+
+    //solar panels
+    let panelDescriptions = []
+    for (let i = 0; i < 4; i++) {
+        const panelGD = new GraphDescription(serialData, serialData);
+        panelGD.name = "Panel " + i;
+        panelGD.strokeStyle = [panelGD.strokeStyle, "#ff5959", "#1f8f3d", "#c2b611"][i];
+        panelGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.P.get(i)};
+        panelGD.indexFunc = millisIndexFunc;
+        panelDescriptions.push(panelGD);
+    }
+
+    return (
+    <div className="widgets-container">
+        <GraphWidget graphDescriptions={[analogTemperatureGD, bmpTemperatureGD]} widgetName={"Temperature"}/>
+        <GraphWidget graphDescriptions={[gpsAltitudeGD, bmpAltitudeGD]} widgetName={"Altitude"}/>
+        <GraphWidget graphDescriptions={panelDescriptions} widgetName={"Solar Panels"}/>
+        <CanvasGraph3DWidget widgetName="Course" graphDescs={[test3dGD]}></CanvasGraph3DWidget>
+    </div>
+    );
+}

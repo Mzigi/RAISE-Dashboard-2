@@ -1,12 +1,13 @@
 {
     "compilerOptions": {
-      "target": "es5",
+      "target": "ESNext",
       "allowJs": true,
       "jsx": "react",
       "moduleResolution": "node",
       "outDir": "./dist",
       "strict": true,
-      "esModuleInterop": true
+      "esModuleInterop": true,
+      "types": ["@webgpu/types", "@types/w3c-web-serial"]
     },
     "include": ["src/**/*"]
   }
