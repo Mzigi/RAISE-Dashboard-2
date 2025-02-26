@@ -73,9 +73,9 @@ export class GPSDataGroup {
         this.minute = v4;
         this.second = v5;
 
-        this.latitude = v6;
-        this.longitude = v7;
-        this.altitude = v8;
+        this.latitude = v6 / 10000;
+        this.longitude = v7 / 10000;
+        this.altitude = v8 / 10000;
 
         return this
     }

@@ -1,6 +1,7 @@
 - Cutoff range
 - Open and close button
 o Stop canvas from growing
+    - Switch to flex
 - Triangulation
     - Make RSSI_START not constant
 - 3d graph
@@ -8,4 +9,4 @@ o Stop canvas from growing
     - Show position when hovering over point
     - Allow choosing from various description
 - Importing log
-- Check if longitude and latitude has enough decimal points when printed in Serial
+o Check if longitude and latitude has enough decimal points when printed in Serial
