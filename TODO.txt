@@ -10,3 +10,4 @@ o Stop canvas from growing
     - Allow choosing from various description
 - Importing log
 o Check if longitude and latitude has enough decimal points when printed in Serial
+- Legg til enheter på grafene
