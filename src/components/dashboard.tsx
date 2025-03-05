@@ -70,12 +70,16 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
 
     return (
     <div className="widgets-container">
-        <GraphWidget graphDescriptions={[analogTemperatureGD, bmpTemperatureGD]} widgetName={"Temperature"}/>
-        <GraphWidget graphDescriptions={[gpsAltitudeGD, bmpAltitudeGD]} widgetName={"Altitude"}/>
-        <GraphWidget graphDescriptions={panelDescriptions} widgetName={"Solar Panels"}/>
-        <CanvasGraph3DWidget widgetName="Position" graphDescs={[test3dGD]} markedPoints={stationPositions}></CanvasGraph3DWidget>
-        <StatusWidget serialDataGroup={serialData[serialData.length - 1]} sendSerial={sendSerial}/>
-        <ConsoleWidget serialLog={serialLog}/>
+        <div className="widgets-row">
+            <GraphWidget graphDescriptions={[analogTemperatureGD, bmpTemperatureGD]} widgetName={"Temperature"}/>
+            <GraphWidget graphDescriptions={[gpsAltitudeGD, bmpAltitudeGD]} widgetName={"Altitude"}/>
+            <GraphWidget graphDescriptions={panelDescriptions} widgetName={"Solar Panels"}/>
+        </div>
+        <div className="widgets-row">
+            <CanvasGraph3DWidget widgetName="Position" graphDescs={[test3dGD]} markedPoints={stationPositions}></CanvasGraph3DWidget>
+            <StatusWidget serialDataGroup={serialData[serialData.length - 1]} sendSerial={sendSerial}/>
+            <ConsoleWidget serialLog={serialLog}/>
+        </div>
     </div>
     );
 }

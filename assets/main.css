@@ -123,11 +123,15 @@ button {
 
     overflow: hidden;
 
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    grid-column-gap: 10px;
-    grid-row-gap: 10px; 
+    display: flex;
+    flex-direction: column;
+}
+
+.widgets-row {
+    display: flex;
+    flex-direction: row;
+    height: 48%;
+    margin: 10px 0 10px 0;
 }
 
 .radialButton {
@@ -166,8 +170,12 @@ button {
 }
 
 .widget {
+    height: calc(100% - 30px);
+    width: calc(33% - 40px);
+
     max-height: 100%;
     padding: 1em;
+    margin: 0 10px 0 10px;
 
     background-color: var(--blank-1);
     border-radius: 0.5em;
