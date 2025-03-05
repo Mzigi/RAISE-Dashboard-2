@@ -6,9 +6,9 @@ Z = NORTH
 
 import { Vector3 } from "../rendering/core/model";
 
-const RSSI_START = -60;
+//const RSSI_START = -60;
 
-export function rssiToDistance(RSSI: number, txPower: number) {
+export function rssiToDistance(RSSI: number, txPower: number, RSSI_START: number) {
     let PL0: number = txPower - RSSI_START;
     return Math.pow(10, ((txPower - RSSI - PL0)) / (10 * 2));
 }
