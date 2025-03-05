@@ -34,9 +34,10 @@ export default function App(): React.JSX.Element {
     let [stationPositions, setStationPositions] = useState<[Vector3,Vector3,Vector3]>([new Vector3(0,0,0), new Vector3(-1000,0,0), new Vector3(-500,0,500)]);
 
     useEffect(() => {
-        if (!serialData.port?.connected) {
+        if (serialData.port && !serialData.port.connected) {
             serialData.closePort();
             setSerialConnectionStatus("disconnected")
+            //console.log("disconnected 40")
         }
         if (!serialData.reader) {
             return;
@@ -94,6 +95,7 @@ export default function App(): React.JSX.Element {
             console.log(port.getInfo());
 
             setSerialConnectionStatus("connecting")
+            //console.log("connecting 97")
 
             await port.open({baudRate: 9600});
             
@@ -102,10 +104,12 @@ export default function App(): React.JSX.Element {
             newSerialData.readyRead();
 
             setSerialConnectionStatus("connected");
+            //console.log("connected 106")
             setSerialData(newSerialData);
         } catch (error) {
             console.warn(error);
             setSerialConnectionStatus("disconnected");
+            //console.log("disconnected 111")
         }
     }
 
@@ -118,6 +122,7 @@ export default function App(): React.JSX.Element {
         }
 
         setSerialConnectionStatus("disconnected")
+        //console.log("disconnected 124")
         setSerialData(newSerialData)
     }
 
