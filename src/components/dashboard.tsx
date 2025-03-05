@@ -12,11 +12,17 @@ const millisIndexFunc = (serialDataGroup: SerialDataGroup): number => {
     return serialDataGroup.milliseconds / 1000;
 }
 
+function analogTemperatureCalibration1(x: number): number {
+    return -0.6935*x + 708.4477;
+}
+
 export default function Dashboard({ serialData, stationPositions, sendSerial, serialLog }: { serialData: SerialDataGroup[], stationPositions: Vector3[], sendSerial: Function, serialLog: string }): React.JSX.Element {
     //temperature
     const analogTemperatureGD = new GraphDescription(serialData, serialData);
     analogTemperatureGD.name = "Analog";
-    analogTemperatureGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.T2};
+    analogTemperatureGD.valueFunc = (serialDataGroup: SerialDataGroup) => {
+        return analogTemperatureCalibration1(serialDataGroup.T2);
+    };
     analogTemperatureGD.indexFunc = millisIndexFunc;
 
     const bmpTemperatureGD = new GraphDescription(serialData, serialData);
