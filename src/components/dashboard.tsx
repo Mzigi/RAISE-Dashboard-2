@@ -12,6 +12,10 @@ const millisIndexFunc = (serialDataGroup: SerialDataGroup): number => {
     return serialDataGroup.milliseconds / 1000;
 }
 
+//Based on these values
+//978 = 30
+//987 = 24.25
+//995 = 18.19
 function analogTemperatureCalibration1(x: number): number {
     return -0.6935*x + 708.4477;
 }
