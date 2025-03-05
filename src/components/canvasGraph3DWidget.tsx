@@ -182,7 +182,7 @@ export class GraphDescription3 {
     }
 }
 
-function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, widgetName: string, graphDescs: GraphDescription3[], markedPoints: Vector3[]) {
+function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, widgetName: string, graphDescs: GraphDescription3[], markedPoints: Vector3[], setMarkedPoints?: Function) {
     if (canvas.width != canvas.clientWidth || canvas.height != canvas.clientHeight) {
         canvas.width = canvas.clientWidth
         canvas.height = canvas.clientHeight
@@ -366,6 +366,46 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
         }
     }
 
+    //input
+    if (setMarkedPoints && isMouseDown && lastMousePos) {
+        let closestMarkedPointI = null;
+        let closestMarkedPointZ = null;
+
+        for (let i = 0; i < markedPoints.length; i++) {
+            let markedPoint = markedPoints[i];
+            let mappedMarkedPoint = markedPoint.clone();
+            mappedMarkedPoint.x = mapNum(mappedMarkedPoint.x, lowerBound.x, upperBound.x, 0, graphWidth);
+            mappedMarkedPoint.y = mapNum(mappedMarkedPoint.y, lowerBound.y, upperBound.y, graphHeight, 0);
+            mappedMarkedPoint.z = mapNum(mappedMarkedPoint.z, lowerBound.z, upperBound.z, 0, graphWidth);
+    
+            let size = 0.1;
+
+            let screenPos: Vector3 = vec3ToScreen(viewProjMat, resolution, mappedMarkedPoint);
+            if (screenPos.z >= camera.nearZ) {
+                let actualSize = size / screenPos.z;
+                actualSize *= canvas.width;
+
+                let markedPointScreenPos = new Vector2(screenPos.x, screenPos.y);
+                let markedPointRadius = actualSize * 0.6;
+
+                let realMousePos = new Vector2(lastMousePos.x - canvas.getBoundingClientRect().left, lastMousePos.y - canvas.getBoundingClientRect().top)
+                let diffFromMouse = markedPointScreenPos.minus(realMousePos).magnitude();
+
+                if (diffFromMouse < markedPointRadius) {
+                    if (closestMarkedPointI == null) {
+                        
+                    }
+                }
+
+                //draw hitbox
+                /*context.fillStyle = "#0ff"
+                context.beginPath();
+                context.arc(markedPointScreenPos.x, markedPointScreenPos.y, markedPointRadius, 0, 360);
+                context.fill();*/
+            }
+        }
+    }
+
     /*
     context.beginPath();
     prepareLine3D(context, camera, viewProjMat, resolution, new Vector3(0,0,0), new Vector3(1,0,0));
@@ -402,7 +442,7 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
     mouseDiff.x = 0;
     mouseDiff.y = 0;
     lastAnimationFrameId = window.requestAnimationFrame(() => {
-        render(camera, canvas, context, widgetName, graphDescs, markedPoints);
+        render(camera, canvas, context, widgetName, graphDescs, markedPoints, setMarkedPoints);
     })
 }
 
@@ -436,7 +476,7 @@ function wheelListener(evt: WheelEvent) {
     evt.preventDefault();
 }
 
-function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], markedPoints = [] } : { widgetName?: string, graphDescs?: GraphDescription3[], markedPoints?: Vector3[] }) {
+function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], markedPoints = [], setMarkedPoints } : { widgetName?: string, graphDescs?: GraphDescription3[], markedPoints?: Vector3[], setMarkedPoints?: Function }) {
     const canvasRef = useRef(null); 
     const cameraRef = useRef(new Camera(new Vector3(0.7, 0, 5.29)));
 
@@ -456,7 +496,7 @@ function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], markedPoints = 
         if (!context) return () => {};
         
         updateOrbitalCamera(camera, new Vector2(0,0));
-        render(camera, canvas, context, widgetName, graphDescs, markedPoints);
+        render(camera, canvas, context, widgetName, graphDescs, markedPoints, setMarkedPoints);
 
         return () => {
             canvas.removeEventListener("mousemove", mouseMoveListener);

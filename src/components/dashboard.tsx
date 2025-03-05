@@ -20,7 +20,7 @@ function analogTemperatureCalibration1(x: number): number {
     return -0.6935*x + 708.4477;
 }
 
-export default function Dashboard({ serialData, stationPositions, sendSerial, serialLog }: { serialData: SerialDataGroup[], stationPositions: Vector3[], sendSerial: Function, serialLog: string }): React.JSX.Element {
+export default function Dashboard({ serialData, stationPositions, sendSerial, serialLog, setStationPositions }: { serialData: SerialDataGroup[], stationPositions: Vector3[], sendSerial: Function, serialLog: string, setStationPositions: Function }): React.JSX.Element {
     //temperature
     const analogTemperatureGD = new GraphDescription(serialData, serialData);
     analogTemperatureGD.name = "Analog";
@@ -86,7 +86,7 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
             <GraphWidget graphDescriptions={panelDescriptions} widgetName={"Solar Panels"}/>
         </div>
         <div className="widgets-row">
-            <CanvasGraph3DWidget widgetName="Position" graphDescs={[test3dGD]} markedPoints={stationPositions}></CanvasGraph3DWidget>
+            <CanvasGraph3DWidget widgetName="Position" graphDescs={[test3dGD]} markedPoints={stationPositions} setMarkedPoints={setStationPositions}></CanvasGraph3DWidget>
             <StatusWidget serialDataGroup={serialData[serialData.length - 1]} sendSerial={sendSerial}/>
             <ConsoleWidget serialLog={serialLog}/>
         </div>
