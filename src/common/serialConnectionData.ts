@@ -192,8 +192,10 @@ export default class SerialConnectionData {
                     }
                 } else if (["OPN","BMP"].includes(lineName)) {
                     let [name, value] = this.getLineValues(line);
-                    if (currentGroup[name]) {
+                    //console.log(`${lineName} = ${value}`);
+                    if (currentGroup[name] != undefined) {
                         currentGroup[name] = value == 1;
+                        //console.log(currentGroup[name]);
                     }
                 } else {
                     switch (lineName) {
