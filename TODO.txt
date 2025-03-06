@@ -4,7 +4,7 @@
 - 3d graph
     - Make grid lines come from lastVal
     - Show position when hovering over point
-    - Allow choosing from various description
+    - Allow choosing from various descriptions
 - Importing log
 o Check if longitude and latitude has enough decimal points when printed in Serial
 - Legg til enheter på grafene
