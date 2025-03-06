@@ -33,6 +33,8 @@ export default function App(): React.JSX.Element {
     let [logHandle, setLogHandle] = useState<FileSystemWritableFileStream | null>(null);
     let [stationPositions, setStationPositions] = useState<[Vector3,Vector3,Vector3]>([new Vector3(0,0,0), new Vector3(-1000,0,0), new Vector3(-500,0,500)]);
 
+    window.stationPositions = stationPositions;
+
     useEffect(() => {
         if (serialData.port && !serialData.port.connected) {
             serialData.closePort();

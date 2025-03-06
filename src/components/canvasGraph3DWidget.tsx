@@ -7,6 +7,7 @@ import { mat4 } from "wgpu-matrix";
 
 let mouseDiff = new Vector2(0,0);
 let isMouseDown: boolean = false;
+let isMouseDownRN: boolean = false;
 const mouseSensitivity = 0.3;
 let cameraZoom: number = 3;
 
@@ -367,7 +368,7 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
     }
 
     //input
-    if (setMarkedPoints && isMouseDown && lastMousePos) {
+    if (setMarkedPoints && isMouseDownRN && lastMousePos) {
         let closestMarkedPointI = null;
         let closestMarkedPointZ = null;
 
@@ -393,7 +394,11 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
 
                 if (diffFromMouse < markedPointRadius) {
                     if (closestMarkedPointI == null) {
-                        
+                        closestMarkedPointI = i;
+                        closestMarkedPointZ = screenPos.z;
+                    } else if (closestMarkedPointZ && screenPos.z < closestMarkedPointZ) {
+                        closestMarkedPointI = i;
+                        closestMarkedPointZ = screenPos.z;
                     }
                 }
 
@@ -402,6 +407,27 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
                 context.beginPath();
                 context.arc(markedPointScreenPos.x, markedPointScreenPos.y, markedPointRadius, 0, 360);
                 context.fill();*/
+            }
+        }
+
+        if (closestMarkedPointI != null) {
+            isMouseDown = false;
+            let newPos = prompt(`New position for station ${closestMarkedPointI + 1}, write as "x,z"`);
+            if (newPos) {
+                console.log(newPos);
+                let splitNewPos = newPos.split(",");
+                if (splitNewPos.length == 2) {
+                    let x = Number(splitNewPos[0])
+                    let y = Number(splitNewPos[1])
+
+                    if (x <= 3000 && x >= -3000) {
+                        if (y <= 3000 && y >= -3000) {
+                            let newMarkedPoints = [markedPoints[0], markedPoints[1], markedPoints[2]];
+                            newMarkedPoints[closestMarkedPointI] = new Vector3(x,0,y);
+                            setMarkedPoints(newMarkedPoints);
+                        }
+                    }
+                }
             }
         }
     }
@@ -441,6 +467,8 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
     //end
     mouseDiff.x = 0;
     mouseDiff.y = 0;
+    isMouseDownRN = false;
+
     lastAnimationFrameId = window.requestAnimationFrame(() => {
         render(camera, canvas, context, widgetName, graphDescs, markedPoints, setMarkedPoints);
     })
@@ -462,6 +490,7 @@ function mouseMoveListener(evt: MouseEvent) {
 function mouseDownListener(evt: MouseEvent) {
     if (evt.button == 0) {
         isMouseDown = true;
+        isMouseDownRN = true;
     }
 }
 

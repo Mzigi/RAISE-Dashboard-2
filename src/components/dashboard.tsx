@@ -8,6 +8,12 @@ import { basicTriangulation, rssiToDistance } from "../common/triangulation";
 import StatusWidget from "./statusWidget";
 import ConsoleWidget from "./consoleWidget";
 
+declare global {
+    interface Window {
+        stationPositions: [Vector3, Vector3, Vector3];
+    }
+}
+
 const millisIndexFunc = (serialDataGroup: SerialDataGroup): number => {
     return serialDataGroup.milliseconds / 1000;
 }
