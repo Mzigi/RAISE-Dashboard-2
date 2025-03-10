@@ -184,7 +184,7 @@ button {
 
 .graph-widget {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
 
     font-family: var(--regular-font-family);
     font-weight: var(--regular-font-weight);
@@ -235,6 +235,17 @@ button {
 
 .graph-widget-right-list > li {
     display: inline-block;
+}
+
+.graph-widget-rssi-container {
+    display: flex;
+    flex-direction: row;
+    height: 1em;
+}
+
+.graph-widget-rssi-container > input {
+    width: 3em;
+    margin: 0 2px 0 2px;
 }
 
 .status {

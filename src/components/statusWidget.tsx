@@ -19,10 +19,10 @@ export default function StatusWidget({ serialDataGroup, sendSerial }: {serialDat
                 <span className="title">Request</span>
                 <ul>
                     <li>
-                        <RadialButton onClick={() => {sendSerial("open")}}>Open</RadialButton>
+                        <RadialButton onClick={() => {sendSerial("open\n")}}>Open</RadialButton>
                     </li>
                     <li>
-                        <RadialButton onClick={() => {sendSerial("close")}}>Close</RadialButton>
+                        <RadialButton onClick={() => {sendSerial("close\n")}}>Close</RadialButton>
                     </li>
                 </ul>
             </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useMouseMove } from "../common/useMouseMove/useMouseMove";
 import { clamp, drawText, mapNum, SDL_ALPHA_OPAQUE, SDL_SetRenderDrawColor } from "../common/sdlLayer";
 import { Camera } from "../rendering/core/camera";
@@ -153,7 +153,7 @@ export class GraphDescription3 {
     private _mappedValues: Array<Vector3 | null> | undefined;
 
     indexFunc: (val: any, index: number, array: any[]) => number = (val: any): number => {return Number(val)}
-    valueFunc: (val: any, index: number, array: any[]) => Vector3 = (val: any): Vector3 => {return new Vector3(Number(val))};
+    valueFunc: (val: any, array: any[]) => Vector3 = (val: any, rssi): Vector3 => {return new Vector3(Number(val + rssi))};
     invalidFunc: (val: any) => boolean = (val: any): boolean => {return false};
 
     strokeStyle: string = "#426cf5";
@@ -167,9 +167,9 @@ export class GraphDescription3 {
         return this._mappedIndices;
     }
 
-    get values() {
+    values(rssi: [number,number,number]) {
         if (!this._mappedValues) {
-            this._mappedValues = shrinkArray(this._values.map(this.valueFunc).map((val: any) => {
+            this._mappedValues = shrinkArray(this._values.map((val: any) => {this.valueFunc(val, rssi)}).map((val: any) => {
                 return (this.invalidFunc(val) ? null : val);
             }),200);
         }
@@ -183,7 +183,7 @@ export class GraphDescription3 {
     }
 }
 
-function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, widgetName: string, graphDescs: GraphDescription3[], markedPoints: Vector3[], setMarkedPoints?: Function) {
+function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, widgetName: string, graphDescs: GraphDescription3[], markedPoints: Vector3[], rssi: [number,number,number], setMarkedPoints?: Function) {
     if (canvas.width != canvas.clientWidth || canvas.height != canvas.clientHeight) {
         canvas.width = canvas.clientWidth
         canvas.height = canvas.clientHeight
@@ -334,7 +334,7 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
         let lastVal = new Vector3(0);
         let lastValIsNull: boolean = true;
 
-        for (let val of graphDesc.values) {
+        for (let val of graphDesc.values(rssi)) {
             if (val) {
                 val = val.clone();
                 val.x = mapNum(val.x, lowerBound.x, upperBound.x, 0, graphWidth);
@@ -352,7 +352,7 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
 
         context.stroke();
 
-        let endVal = graphDesc.values[graphDesc.values.length - 1]
+        let endVal = graphDesc.values(rssi)[graphDesc.values.length - 1]
 
         if (endVal) {
             //console.log(endVal);
@@ -470,7 +470,7 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
     isMouseDownRN = false;
 
     lastAnimationFrameId = window.requestAnimationFrame(() => {
-        render(camera, canvas, context, widgetName, graphDescs, markedPoints, setMarkedPoints);
+        render(camera, canvas, context, widgetName, graphDescs, markedPoints, rssi, setMarkedPoints);
     })
 }
 
@@ -509,6 +509,8 @@ function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], markedPoints = 
     const canvasRef = useRef(null); 
     const cameraRef = useRef(new Camera(new Vector3(0.7, 0, 5.29)));
 
+    let [rssi, setRssi] = useState<[number, number, number]>([-60, -60, -60]);
+
     useEffect(() => {
         const camera = cameraRef.current;
         camera.fov = 70;
@@ -525,7 +527,7 @@ function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], markedPoints = 
         if (!context) return () => {};
         
         updateOrbitalCamera(camera, new Vector2(0,0));
-        render(camera, canvas, context, widgetName, graphDescs, markedPoints, setMarkedPoints);
+        render(camera, canvas, context, widgetName, graphDescs, markedPoints, rssi, setMarkedPoints);
 
         return () => {
             canvas.removeEventListener("mousemove", mouseMoveListener);
@@ -541,6 +543,18 @@ function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], markedPoints = 
 
     return (
         <div className="widget graph-widget">
+            <div className="graph-widget-rssi-container">
+                1m RSSI:
+                <input type="number" placeholder="1" value={rssi[0]} onChange={(e) => {
+                    setRssi([e.target.valueAsNumber, rssi[1], rssi[2]])
+                }}></input>
+                <input type="number" placeholder="2" value={rssi[1]} onChange={(e) => {
+                    setRssi([rssi[0], e.target.valueAsNumber, rssi[2]])
+                }}></input>
+                <input type="number" placeholder="3" value={rssi[2]} onChange={(e) => {
+                    setRssi([rssi[0], rssi[1], e.target.valueAsNumber])
+                }}></input>
+            </div>
             <canvas ref={canvasRef}></canvas>
         </div>
     )
