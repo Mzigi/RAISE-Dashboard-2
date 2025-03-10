@@ -65,10 +65,11 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     //3d description
     const test3dGD = new GraphDescription3(serialData, serialData);
     test3dGD.name = "test 3d";
-    test3dGD.valueFunc = (serialDataGroup: SerialDataGroup) => {
+    test3dGD.valueFunc = (serialDataGroup: SerialDataGroup, rssi: [number,number,number]) => {
         let txPower = 17;
-        let [R1, R2, R3] = [rssiToDistance(serialDataGroup.S.S1, txPower), rssiToDistance(serialDataGroup.S.S2, txPower), rssiToDistance(serialDataGroup.S.S3, txPower)];
+        let [R1, R2, R3] = [rssiToDistance(serialDataGroup.S.S1, txPower, rssi[0]), rssiToDistance(serialDataGroup.S.S2, txPower, rssi[1]), rssiToDistance(serialDataGroup.S.S3, txPower, rssi[2])];
         let resultPos = basicTriangulation(new Vector3(0), new Vector3(-stationPositions[1].x,0), new Vector3(-stationPositions[2].x,stationPositions[2].z), R1, R2, R3);
+        console.log(rssi);
         return resultPos;
     }
     test3dGD.indexFunc = millisIndexFunc;

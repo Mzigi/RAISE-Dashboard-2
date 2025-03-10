@@ -253,6 +253,14 @@ button {
     flex-direction: row;
 }
 
+.status-content {
+    overflow: auto;
+}
+
+.status-button-content {
+    justify-content: center !important;
+}
+
 .status-divider {
     height:100%;
     width: 1px;
@@ -275,7 +283,7 @@ button {
 
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
 }
 
 .status-left > ul > li {

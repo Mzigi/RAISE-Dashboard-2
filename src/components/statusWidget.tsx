@@ -17,7 +17,7 @@ export default function StatusWidget({ serialDataGroup, sendSerial }: {serialDat
         <div className="widget status">
             <div className="status-side status-left">
                 <span className="title">Request</span>
-                <ul>
+                <ul className="status-button-content">
                     <li>
                         <RadialButton onClick={() => {sendSerial("open\n")}}>Open</RadialButton>
                     </li>
@@ -29,7 +29,7 @@ export default function StatusWidget({ serialDataGroup, sendSerial }: {serialDat
             <div className="status-divider"></div>
             <div className="status-side status-right">
                 <span className="title">Raw Info</span>
-                <ul>
+                <ul className="status-content">
                     <li>Tick: {serialDataGroup.I}</li>
                     <li>Seconds: {serialDataGroup.milliseconds / 1000}</li>
                     <li>BMP Temperature: {serialDataGroup.T}</li>

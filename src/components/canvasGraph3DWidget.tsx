@@ -153,7 +153,7 @@ export class GraphDescription3 {
     private _mappedValues: Array<Vector3 | null> | undefined;
 
     indexFunc: (val: any, index: number, array: any[]) => number = (val: any): number => {return Number(val)}
-    valueFunc: (val: any, array: any[]) => Vector3 = (val: any, rssi): Vector3 => {return new Vector3(Number(val + rssi))};
+    valueFunc: (val: any, rssi: [number,number,number]) => Vector3 = (val: any, rssi: [number,number,number]): Vector3 => {return new Vector3(Number(val + rssi))};
     invalidFunc: (val: any) => boolean = (val: any): boolean => {return false};
 
     strokeStyle: string = "#426cf5";
