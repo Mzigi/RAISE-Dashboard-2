@@ -114,6 +114,14 @@ button {
     background-color: var(--blank-0);
 }
 
+#import-log {
+    display: none;
+}
+
+.no-padding {
+    padding: 0 !important;
+}
+
 .widgets-container {
     height: calc(94% - 20px);
     width: calc(100% - 20px);

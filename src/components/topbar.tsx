@@ -12,6 +12,9 @@ export default function TopBar({ serialConnect, serialConnectionStatus, serialCl
             <span className="topbar-title-secondary">Dashboard</span>
         </div>
         <div className="topbar-right">
+            <RadialButton className="no-padding">
+                <label htmlFor="import-log" style={{padding: "0 1em 0 1em"}}>Import Log</label><input type="file" id="import-log"/>
+            </RadialButton>
             <RadialButton onClick={downloadLog}>
                 Download Log
             </RadialButton>
