@@ -26,16 +26,20 @@ function analogTemperatureCalibration1(x: number): number {
     return -0.6935*x + 708.4477;
 }
 
+function analogTemperatureCalibration2(x: number): number {
+    return -0.05*x + 63.62;
+}
+
 export default function Dashboard({ serialData, stationPositions, sendSerial, serialLog, setStationPositions }: { serialData: SerialDataGroup[], stationPositions: Vector3[], sendSerial: Function, serialLog: string, setStationPositions: Function }): React.JSX.Element {
     //temperature
     const analogTemperatureGD = new GraphDescription(serialData, serialData);
     analogTemperatureGD.name = "Analog";
     analogTemperatureGD.valueFunc = (serialDataGroup: SerialDataGroup) => {
-        return serialDataGroup.T2 //analogTemperatureCalibration1(serialDataGroup.T2);
+        return analogTemperatureCalibration2(serialDataGroup.T2);
     };
     analogTemperatureGD.indexFunc = millisIndexFunc;
     analogTemperatureGD.invalidFunc = (val: number) => {
-        return val >= 1024;
+        return val >= 100 || val <= -273;
     }
 
     const bmpTemperatureGD = new GraphDescription(serialData, serialData);
