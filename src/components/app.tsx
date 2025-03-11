@@ -128,6 +128,17 @@ export default function App(): React.JSX.Element {
         setSerialData(newSerialData)
     }
 
+    function parseLines(data: string) {
+        let newSerialData: SerialConnectionData = serialData.clone();
+
+        let lines = data.split("\n");
+        for (let line of lines) {
+            newSerialData.parseLine(line);
+        }
+
+        setSerialData(newSerialData);
+    }
+
     async function saveLog() {
         if (!window.showSaveFilePicker) {
             alert("Your browser does not support writing to file handles. Try using Microsoft Edge.")
@@ -165,7 +176,7 @@ export default function App(): React.JSX.Element {
 
     return (<>
         <SerialContext.Provider value={serialData}>
-            <TopBar serialConnect={serialConnect} serialConnectionStatus={serialConnectionStatus} serialClose={serialClose} saveLog={saveLog} downloadLog={downloadLog}/>
+            <TopBar serialConnect={serialConnect} serialConnectionStatus={serialConnectionStatus} serialClose={serialClose} saveLog={saveLog} downloadLog={downloadLog} parseLines={parseLines}/>
             <Dashboard serialData={serialData.serialData} stationPositions={stationPositions} sendSerial={sendSerial} serialLog={serialData.log} setStationPositions={setStationPositions}/>
         </SerialContext.Provider>
     </>);
