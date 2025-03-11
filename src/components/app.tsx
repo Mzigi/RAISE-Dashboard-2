@@ -130,6 +130,7 @@ export default function App(): React.JSX.Element {
 
     function parseLines(data: string) {
         let newSerialData: SerialConnectionData = serialData.clone();
+        newSerialData.log += data;
 
         let lines = data.split("\n");
         for (let line of lines) {

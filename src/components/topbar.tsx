@@ -16,7 +16,7 @@ export default function TopBar({ serialConnect, serialConnectionStatus, serialCl
                 <label htmlFor="import-log" style={{padding: "0 1em 0 1em"}}>Import Log</label><input type="file" id="import-log" onChange={
                     (e: React.ChangeEvent<HTMLInputElement>) => {
                         let input = e.target;
-                        if (input.files && input.files.length >= 0) {
+                        if (input.files && input.files.length > 0) {
                             const fileReader = new FileReader();
                             fileReader.addEventListener("load", (e) => {
                                 let result = fileReader.result;
