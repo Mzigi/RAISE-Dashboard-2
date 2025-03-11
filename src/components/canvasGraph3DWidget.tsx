@@ -169,9 +169,13 @@ export class GraphDescription3 {
 
     values(rssi: [number,number,number]) {
         if (!this._mappedValues) {
-            this._mappedValues = shrinkArray(this._values.map((val: any) => {this.valueFunc(val, rssi)}).map((val: any) => {
-                return (this.invalidFunc(val) ? null : val);
-            }),200);
+            this._mappedValues = shrinkArray(
+                this._values.map((val: any) => {
+                    return this.valueFunc(val, rssi)
+                }).map((val: any) => {
+                    return (this.invalidFunc(val) ? null : val);
+                })
+            ,200);
         }
 
         return this._mappedValues;
@@ -505,7 +509,7 @@ function wheelListener(evt: WheelEvent) {
     evt.preventDefault();
 }
 
-function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], markedPoints = [], setMarkedPoints } : { widgetName?: string, graphDescs?: GraphDescription3[], markedPoints?: Vector3[], setMarkedPoints?: Function }) {
+export default function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], markedPoints = [], setMarkedPoints } : { widgetName?: string, graphDescs?: GraphDescription3[], markedPoints?: Vector3[], setMarkedPoints?: Function }) {
     const canvasRef = useRef(null); 
     const cameraRef = useRef(new Camera(new Vector3(0.7, 0, 5.29)));
 
@@ -559,5 +563,3 @@ function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], markedPoints = 
         </div>
     )
 }
-
-export default React.memo(CanvasGraph3DWidget);

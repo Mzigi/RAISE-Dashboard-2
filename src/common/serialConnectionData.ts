@@ -95,6 +95,8 @@ export class SerialDataGroup {
     P: PanelDataGroup = new PanelDataGroup();
     GPS: GPSDataGroup = new GPSDataGroup();
     BMP: boolean = false; //has bmp
+
+    baseALT: number = 0;
 }
 
 
@@ -107,6 +109,8 @@ export default class SerialConnectionData {
 
     serialData: SerialDataGroup[] = [];
     incompleteGroup?: SerialDataGroup = undefined;
+
+    altitudeBaseHeight?: number = undefined;
 
     readyRead() {
         if (!this.port || !this.port.readable) {
@@ -182,6 +186,19 @@ export default class SerialConnectionData {
                 let [_name, index, millis] = line.split(" ");
                 currentGroup.I = Number(index);
                 currentGroup.milliseconds = Number(millis);
+
+                if (this.serialData.length >= 2) {
+                    let preLastGroup = this.serialData[this.serialData.length - 2];
+                    let lastGroup = this.getLastGroup();
+
+                    if (lastGroup && preLastGroup) {
+                        if (preLastGroup.milliseconds && preLastGroup.milliseconds >= lastGroup.milliseconds && preLastGroup.milliseconds >= Number(millis)) {
+                            console.warn(`Removed corrupted group at I ${index}`)
+                            this.serialData.splice(this.serialData.length - 2, 1);
+                        }
+
+                    }
+                }
             } else if (currentGroup) {
                 let lineName = line.split("=")[0];
 
@@ -189,6 +206,16 @@ export default class SerialConnectionData {
                     let [name, value] = this.getLineValues(line);
                     if (currentGroup[name]) {
                         currentGroup[name] = value;
+                    }
+
+                    if (lineName == "ALT") {
+                        if (value > 0 && this.altitudeBaseHeight == 0) {
+                            this.altitudeBaseHeight = value;
+                        }
+
+                        if (this.altitudeBaseHeight) {
+                            currentGroup.baseALT = this.altitudeBaseHeight;
+                        }
                     }
                 } else if (["OPN","BMP"].includes(lineName)) {
                     let [name, value] = this.getLineValues(line);

@@ -13,7 +13,7 @@ export default function TopBar({ serialConnect, serialConnectionStatus, serialCl
         </div>
         <div className="topbar-right">
             <RadialButton className="no-padding">
-                <label htmlFor="import-log" style={{padding: "0 1em 0 1em"}}>Import Log</label><input type="file" id="import-log" onChange={
+                <label htmlFor="import-log" id="label-import-log">Import Log</label><input type="file" id="import-log" onChange={
                     (e: React.ChangeEvent<HTMLInputElement>) => {
                         let input = e.target;
                         if (input.files && input.files.length > 0) {

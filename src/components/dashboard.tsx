@@ -31,9 +31,12 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     const analogTemperatureGD = new GraphDescription(serialData, serialData);
     analogTemperatureGD.name = "Analog";
     analogTemperatureGD.valueFunc = (serialDataGroup: SerialDataGroup) => {
-        return analogTemperatureCalibration1(serialDataGroup.T2);
+        return serialDataGroup.T2 //analogTemperatureCalibration1(serialDataGroup.T2);
     };
     analogTemperatureGD.indexFunc = millisIndexFunc;
+    analogTemperatureGD.invalidFunc = (val: number) => {
+        return val >= 1024;
+    }
 
     const bmpTemperatureGD = new GraphDescription(serialData, serialData);
     bmpTemperatureGD.name = "BMP";
@@ -69,6 +72,7 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
         let txPower = 17;
         let [R1, R2, R3] = [rssiToDistance(serialDataGroup.S.S1, txPower, rssi[0]), rssiToDistance(serialDataGroup.S.S2, txPower, rssi[1]), rssiToDistance(serialDataGroup.S.S3, txPower, rssi[2])];
         let resultPos = basicTriangulation(new Vector3(0), new Vector3(-stationPositions[1].x,0), new Vector3(-stationPositions[2].x,stationPositions[2].z), R1, R2, R3);
+        resultPos.y = serialDataGroup.ALT - serialDataGroup.baseALT;
         return resultPos;
     }
     test3dGD.indexFunc = millisIndexFunc;
