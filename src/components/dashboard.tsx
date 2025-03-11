@@ -89,6 +89,9 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
         panelGD.strokeStyle = [panelGD.strokeStyle, "#ff5959", "#1f8f3d", "#c2b611"][i];
         panelGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.P.get(i)};
         panelGD.indexFunc = millisIndexFunc;
+        panelGD.invalidFunc = (val: number) => {
+            return val >= 1024;
+        }
         panelDescriptions.push(panelGD);
     }
 
