@@ -22,6 +22,13 @@ let textOffset: number = 0.2;
 
 let lastAnimationFrameId: number | null = null;
 
+function numAsStr(num: number): string {
+    if (num >= 1000) {
+        return (Math.round(num * 1)/1).toString();
+    }
+    return (Math.round(num * 10)/10).toString();
+}
+
 function rad(degrees: number) { return degrees * Math.PI / 180 }
 
 function sign(num: number): number {
@@ -303,15 +310,15 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
     for (let i = 0; i < gridResolution; i++) {
         //let xTextOffset = textOffset / (xSidePositive ? -(gridResolution+1 - i) : (i+1))
         let xTextOffset = 0;
-        let numStrX = new Intl.NumberFormat(["en-US"], {"maximumFractionDigits":1, "useGrouping": "always"}).format(lowerBound.x + i/(gridResolution-1) * (upperBound.x - lowerBound.x));
+        let numStrX = new Intl.NumberFormat(["en-US"], {"maximumFractionDigits":1, "useGrouping": "always"}).format(lowerBound.x + i/(gridResolution-1) * (upperBound.x - lowerBound.x)) + "m";
         drawText3D(canvas, context, camera, viewProjMat, resolution, new Vector3(stepX * i + xTextOffset,yHeight + 0.01 * sign(yHeight),graphWidth - zDist + (zSidePositive ? -textOffset : textOffset)*2), textWidth, numStrX, true);
 
         let zTextOffset = 0;
-        let numStrZ = new Intl.NumberFormat(["en-US"], {"maximumFractionDigits":1, "useGrouping": "always"}).format(lowerBound.z + i/(gridResolution-1) * (upperBound.z - lowerBound.z));
+        let numStrZ = new Intl.NumberFormat(["en-US"], {"maximumFractionDigits":1, "useGrouping": "always"}).format(lowerBound.z + i/(gridResolution-1) * (upperBound.z - lowerBound.z)) + "m";
         drawText3D(canvas, context, camera, viewProjMat, resolution, new Vector3(graphWidth - xDist + (xSidePositive ? -textOffset : textOffset)*2,yHeight + 0.01 * sign(yHeight),stepX * i + zTextOffset), textWidth, numStrZ, true);
     
         let yTextOffset = textOffset
-        let numStrY = new Intl.NumberFormat(["en-US"], {"maximumFractionDigits":1, "useGrouping": "always"}).format(upperBound.y + i/(gridResolution-1) * (lowerBound.y - upperBound.y));
+        let numStrY = new Intl.NumberFormat(["en-US"], {"maximumFractionDigits":1, "useGrouping": "always"}).format(upperBound.y + i/(gridResolution-1) * (lowerBound.y - upperBound.y)) + "m";
         drawText3D(canvas, context, camera, viewProjMat, resolution, new Vector3(xDist,stepY*i - stepY/3,graphWidth-zDist + yTextOffset*sign(zDist-0.001)), textWidth, numStrY, true);
 
         //let numStrY = new Intl.NumberFormat(["en-US"], {"maximumFractionDigits":1, "useGrouping": "always"}).format(lowerBound.z + i/(gridResolution-1) * (upperBound.z - lowerBound.z));
@@ -408,6 +415,41 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
         SDL_RenderDrawLine(context, ux + lineOffset, uy + h / 2, ux + lineWidth + lineOffset, uy + h / 2);
 
         i++;
+    }
+
+    //line between ends
+    if (graphDescs.length >= 2) {
+        let lastGraphDesc = null;
+        for (let graphDesc of graphDescs) {
+            if (lastGraphDesc) {
+                let endVal0 = lastGraphDesc.values(rssi)[lastGraphDesc.values.length - 1]
+                let endVal1 = graphDesc.values(rssi)[graphDesc.values.length - 1]
+
+                if (endVal0 && endVal1) {
+                    let mappedEndVal0 = endVal0.clone();
+                    mappedEndVal0.x = mapNum(mappedEndVal0.x, lowerBound.x, upperBound.x, 0, graphWidth);
+                    mappedEndVal0.y = mapNum(mappedEndVal0.y, lowerBound.y, upperBound.y, graphHeight, 0);
+                    mappedEndVal0.z = mapNum(mappedEndVal0.z, lowerBound.z, upperBound.z, 0, graphWidth);
+
+                    let mappedEndVal1 = endVal1.clone();
+                    mappedEndVal1.x = mapNum(mappedEndVal1.x, lowerBound.x, upperBound.x, 0, graphWidth);
+                    mappedEndVal1.y = mapNum(mappedEndVal1.y, lowerBound.y, upperBound.y, graphHeight, 0);
+                    mappedEndVal1.z = mapNum(mappedEndVal1.z, lowerBound.z, upperBound.z, 0, graphWidth);
+                
+                    context.strokeStyle = "#666";
+                    context.beginPath();
+                    prepareLine3D(context, camera, viewProjMat, resolution, mappedEndVal0, mappedEndVal1);
+                    context.stroke();
+
+                    let dist = endVal1.minus(endVal0).magnitude();
+                    let distText = numAsStr(dist) + "m";
+                    let inBetweenVec = mappedEndVal1.minus(mappedEndVal0).divide(new Vector3(2)).add(mappedEndVal0).minus(new Vector3(0,0.05,0));
+                    drawText3D(canvas, context, camera, viewProjMat, resolution, inBetweenVec, 0.05, distText, true, "#000");
+                }
+            }
+
+            lastGraphDesc = graphDesc;
+        }
     }
 
     //input
