@@ -57,7 +57,7 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     gpsAltitudeGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.GPS.altitude};
     gpsAltitudeGD.indexFunc = millisIndexFunc;
     gpsAltitudeGD.invalidFunc = (val: number) => {
-        return val <= -0.899;
+        return val <= -0.899 || val >= 10000;
     }
 
     const bmpAltitudeGD = new GraphDescription(serialData, serialData);
@@ -66,7 +66,7 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     bmpAltitudeGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.ALT};
     bmpAltitudeGD.indexFunc = millisIndexFunc;
     bmpAltitudeGD.invalidFunc = (val: number) => {
-        return val <= -1;
+        return val <= -1 || val >= 10000;
     }
 
     //3d description
