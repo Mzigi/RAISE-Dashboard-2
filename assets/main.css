@@ -259,11 +259,23 @@ button {
     display: flex;
     flex-direction: row;
     height: 1em;
+    justify-content: space-between;
 }
 
-.graph-widget-rssi-container > input {
+.graph-widget-calibration {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.graph-widget-calibration > input {
     width: 3em;
     margin: 0 2px 0 2px;
+}
+
+.graph-widget-rssi-container > select {
+    height: 1.5em;
+    border-radius: 10px;
 }
 
 .status {

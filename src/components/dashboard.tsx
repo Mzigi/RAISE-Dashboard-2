@@ -30,6 +30,18 @@ function analogTemperatureCalibration2(x: number): number {
     return -0.05*x + 63.62;
 }
 
+function measure(lat1: number, lon1: number, lat2: number, lon2: number){  // generally used geo measurement function
+    let R = 6378.137; // Radius of earth in KM
+    let dLat = lat2 * Math.PI / 180 - lat1 * Math.PI / 180;
+    let dLon = lon2 * Math.PI / 180 - lon1 * Math.PI / 180;
+    let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+    let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    let d = R * c;
+    return d * 1000; // meters
+}
+
 export default function Dashboard({ serialData, stationPositions, sendSerial, serialLog, setStationPositions }: { serialData: SerialDataGroup[], stationPositions: Vector3[], sendSerial: Function, serialLog: string, setStationPositions: Function }): React.JSX.Element {
     //temperature
     const analogTemperatureGD = new GraphDescription(serialData, serialData);
@@ -57,21 +69,21 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     gpsAltitudeGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.GPS.altitude};
     gpsAltitudeGD.indexFunc = millisIndexFunc;
     gpsAltitudeGD.invalidFunc = (val: number) => {
-        return val <= -0.899 || val >= 10000;
+        return val <= -0.899 || val >= 10000 || isNaN(val);
     }
 
     const bmpAltitudeGD = new GraphDescription(serialData, serialData);
     bmpAltitudeGD.name = "BMP";
     bmpAltitudeGD.strokeStyle = "#ff5959"
-    bmpAltitudeGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.ALT};
+    bmpAltitudeGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.ALT - serialDataGroup.baseALT};
     bmpAltitudeGD.indexFunc = millisIndexFunc;
     bmpAltitudeGD.invalidFunc = (val: number) => {
-        return val <= -1 || val >= 10000;
+        return val <= -1 || val >= 10000 || isNaN(val) || val == 0;
     }
 
     //3d description
     const test3dGD = new GraphDescription3(serialData, serialData);
-    test3dGD.name = "test 3d";
+    test3dGD.name = "Triangulation";
     test3dGD.valueFunc = (serialDataGroup: SerialDataGroup, rssi: [number,number,number]) => {
         let txPower = 17;
         let [R1, R2, R3] = [rssiToDistance(serialDataGroup.S.S1, txPower, rssi[0]), rssiToDistance(serialDataGroup.S.S2, txPower, rssi[1]), rssiToDistance(serialDataGroup.S.S3, txPower, rssi[2])];
@@ -80,17 +92,37 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
         return resultPos;
     }
     test3dGD.indexFunc = millisIndexFunc;
+    test3dGD.invalidFunc = (val: Vector3) => {
+        return isNaN(val.x) || isNaN(val.y) || isNaN(val.z) || val.x <= -3000 || val.x >= 3000 || val.z <= -3000 || val.z >= 3000;
+    }
+
+    const gps3dGD = new GraphDescription3(serialData, serialData);
+    gps3dGD.name = "GPS";
+    gps3dGD.strokeStyle = "#f00"
+    gps3dGD.valueFunc = (serialDataGroup: SerialDataGroup, rssi: [number,number,number]) => {
+        let xDist = measure(serialDataGroup.GPS.latitude, serialDataGroup.baseLONGITUDE, serialDataGroup.baseLATITUDE, serialDataGroup.baseLONGITUDE);
+        let zDist = measure(serialDataGroup.baseLATITUDE, serialDataGroup.GPS.longitude, serialDataGroup.baseLATITUDE, serialDataGroup.baseLONGITUDE);
+
+        let resultPos = new Vector3(xDist, 0, zDist)
+        resultPos.y = serialDataGroup.ALT - serialDataGroup.baseALT;
+        return resultPos;
+    }
+    gps3dGD.indexFunc = millisIndexFunc;
+    gps3dGD.invalidFunc = (val: Vector3) => {
+        return isNaN(val.x) || isNaN(val.y) || isNaN(val.z) || val.x <= -3000 || val.x >= 3000 || val.z <= -3000 || val.z >= 3000;
+        //return false
+    }
 
     //solar panels
     let panelDescriptions = []
     for (let i = 0; i < 4; i++) {
         const panelGD = new GraphDescription(serialData, serialData);
-        panelGD.name = "Panel " + i;
+        panelGD.name = "Panel " + (i + 1);
         panelGD.strokeStyle = [panelGD.strokeStyle, "#ff5959", "#1f8f3d", "#c2b611"][i];
         panelGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.P.get(i)};
         panelGD.indexFunc = millisIndexFunc;
         panelGD.invalidFunc = (val: number) => {
-            return val >= 1024;
+            return val >= 1023;
         }
         panelDescriptions.push(panelGD);
     }
@@ -103,7 +135,7 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
             <GraphWidget graphDescriptions={panelDescriptions} widgetName={"Solar Panels"}/>
         </div>
         <div className="widgets-row">
-            <CanvasGraph3DWidget widgetName="Position" graphDescs={[test3dGD]} markedPoints={stationPositions} setMarkedPoints={setStationPositions}></CanvasGraph3DWidget>
+            <CanvasGraph3DWidget widgetName="Position" graphDescs={[gps3dGD, test3dGD]} markedPoints={stationPositions} setMarkedPoints={setStationPositions}></CanvasGraph3DWidget>
             <StatusWidget serialDataGroup={serialData[serialData.length - 1]} sendSerial={sendSerial}/>
             <ConsoleWidget serialLog={serialLog}/>
         </div>

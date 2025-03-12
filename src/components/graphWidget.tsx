@@ -13,6 +13,10 @@ const shrinkArrayAware = (array: any[], size: number) => {
     return array.filter((v, i) => Math.floor(i % step) == 0 || array[i-2] !== undefined && array[i-1] !== undefined && abs(array[i-2] - array[i-1])*2 < abs(array[i-1] - array[i]))
 }
 
+function numAsStr(num: number): string {
+    return (Math.round(num * 10)/10).toString();
+}
+
 export class GraphDescription {
     private _real_indices: Array<number> | undefined;
     private _real_values: Array<number> | undefined;
@@ -137,7 +141,7 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown" 
                 SDL_RenderDrawLine(renderInfo.renderer, bounds.x + 2, bounds.y + height, bounds.x - 6, bounds.y + height); //number indent
                 SDL_SetRenderDrawColor(renderInfo.renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
                 SDL_RenderDrawLine(renderInfo.renderer, bounds.x, bounds.y + height, bounds.x + bounds.w, bounds.y + height); //long grid line
-                drawText(renderInfo.renderer, renderInfo.robotoSmall, value.toString(), bounds.x - PADDING_TEXT_LEFT, bounds.y + height - LETTER_HEIGHT / 2, 1.0, 0);
+                drawText(renderInfo.renderer, renderInfo.robotoSmall, numAsStr(value), bounds.x - PADDING_TEXT_LEFT, bounds.y + height - LETTER_HEIGHT / 2, 1.0, 0);
             }
             for (let i = 0; i < 5; i++) { //x axis
                 let height = mapNum(i, 0.0, 4.0, PADDING, (bounds.w - PADDING));
@@ -148,12 +152,13 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown" 
                 SDL_SetRenderDrawColor(renderInfo.renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
                 SDL_RenderDrawLine(renderInfo.renderer, bounds.x + height, bounds.y, bounds.x + height, bounds.y + bounds.h); //long grid line
 
-                drawText(renderInfo.renderer, renderInfo.robotoSmall, value.toString(), bounds.x + height, bounds.y + bounds.h + PADDING_TEXT_BOTTOM, 0.5, 0.0);
+                drawText(renderInfo.renderer, renderInfo.robotoSmall, numAsStr(value), bounds.x + height, bounds.y + bounds.h + PADDING_TEXT_BOTTOM, 0.5, 0.0);
             }
         }
 
         // draw lines
         for (let graphDesc of graphDescriptions) {
+            //console.log(graphDesc);
             let points: GraphPoint[] = [];
             for (let i = 0; i < graphDesc.indices.length; i++) {
                 let index = graphDesc.indices[i]

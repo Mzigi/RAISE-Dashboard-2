@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useMouseMove } from "../common/useMouseMove/useMouseMove";
-import { clamp, drawText, mapNum, SDL_ALPHA_OPAQUE, SDL_SetRenderDrawColor } from "../common/sdlLayer";
+import { clamp, drawText, mapNum, SDL_ALPHA_OPAQUE, SDL_RenderDrawLine, SDL_SetRenderDrawColor } from "../common/sdlLayer";
 import { Camera } from "../rendering/core/camera";
 import { Vector2, Vector3 } from "../rendering/core/model";
 import { mat4 } from "wgpu-matrix";
@@ -161,7 +161,7 @@ export class GraphDescription3 {
 
     get indices() {
         if (!this._mappedIndices) {
-            this._mappedIndices = shrinkArray(this._indices.map(this.indexFunc),200);
+            this._mappedIndices = shrinkArray(this._indices.map(this.indexFunc),300);
         }
 
         return this._mappedIndices;
@@ -175,7 +175,7 @@ export class GraphDescription3 {
                 }).map((val: any) => {
                     return (this.invalidFunc(val) ? null : val);
                 })
-            ,200);
+            ,300);
         }
 
         return this._mappedValues;
@@ -366,9 +366,48 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
             mappedEndVal.z = mapNum(mappedEndVal.z, lowerBound.z, upperBound.z, 0, graphWidth);
 
             context.beginPath();
-            prepareCircle3D(canvas, context, camera, viewProjMat, resolution, mappedEndVal, 0.05, true);
+            prepareCircle3D(canvas, context, camera, viewProjMat, resolution, mappedEndVal, 0.01, true);
             context.fill();
         }
+    }
+
+    //draw color infos for each graph
+    let i = 0;
+    for (let graphDesc of graphDescs) {
+        SDL_SetRenderDrawColor(context, 255, 255, 255, 0.5);
+
+        context.font = 18 + "px Roboto"
+        let textMeasure = context.measureText(graphDesc.name);
+        let strWidth = textMeasure.width;
+        let strHeight = textMeasure.actualBoundingBoxAscent;
+
+        const rightOffset = 5;
+        const textOffset = 16;
+        const lineWidth = 12;
+        const lineOffset = 3;
+
+        let ux = 0 + 5;
+        let uy = 0 + 5 + 25 * i;
+        let w = textOffset + strWidth + rightOffset;
+        let h = 20;
+
+        context.fillRect(ux, uy, w, h);
+
+        context.lineWidth = 1;
+        SDL_SetRenderDrawColor(context, 0, 0, 0, SDL_ALPHA_OPAQUE);
+        SDL_RenderDrawLine(context, ux, uy, ux + w, uy);
+        SDL_RenderDrawLine(context, ux + w, uy, ux + w, uy + h);
+        SDL_RenderDrawLine(context, ux + w, uy + h, ux, uy + h);
+        SDL_RenderDrawLine(context, ux, uy + h, ux, uy);
+
+        drawText(context, 18, graphDesc.name, ux + textOffset, uy + 3, 0, 0);
+
+        context.strokeStyle = graphDesc.strokeStyle;
+        context.lineWidth = 3;
+        context.globalAlpha = 1;
+        SDL_RenderDrawLine(context, ux + lineOffset, uy + h / 2, ux + lineWidth + lineOffset, uy + h / 2);
+
+        i++;
     }
 
     //input
@@ -548,18 +587,33 @@ export default function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], 
     return (
         <div className="widget graph-widget">
             <div className="graph-widget-rssi-container">
-                1m RSSI:
-                <input type="number" placeholder="1" value={rssi[0]} onChange={(e) => {
-                    setRssi([e.target.valueAsNumber, rssi[1], rssi[2]])
-                }}></input>
-                <input type="number" placeholder="2" value={rssi[1]} onChange={(e) => {
-                    setRssi([rssi[0], e.target.valueAsNumber, rssi[2]])
-                }}></input>
-                <input type="number" placeholder="3" value={rssi[2]} onChange={(e) => {
-                    setRssi([rssi[0], rssi[1], e.target.valueAsNumber])
-                }}></input>
+                <div className="graph-widget-calibration">
+                    1m RSSI:
+                    <input type="number" placeholder="1" value={rssi[0]} onChange={(e) => {
+                        setRssi([e.target.valueAsNumber, rssi[1], rssi[2]])
+                    }}></input>
+                    <input type="number" placeholder="2" value={rssi[1]} onChange={(e) => {
+                        setRssi([rssi[0], e.target.valueAsNumber, rssi[2]])
+                    }}></input>
+                    <input type="number" placeholder="3" value={rssi[2]} onChange={(e) => {
+                        setRssi([rssi[0], rssi[1], e.target.valueAsNumber])
+                    }}></input>
+                </div>
+                
             </div>
             <canvas ref={canvasRef}></canvas>
         </div>
     )
 }
+
+/*
+<select name="3dgraphdesc">
+    {
+        graphDescs.map((desc) => {
+            return (
+                <option value={desc.name}>{desc.name}</option>
+            );
+        })
+    }
+</select>
+*/

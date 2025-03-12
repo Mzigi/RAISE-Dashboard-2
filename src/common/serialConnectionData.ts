@@ -97,6 +97,12 @@ export class SerialDataGroup {
     BMP: boolean = false; //has bmp
 
     baseALT: number = 0;
+
+    baseLATITUDE: number = 0;
+    baseLONGITUDE: number = 0;
+    baseGPSALT: number = 0;
+
+    markForDeletion: boolean = false;
 }
 
 
@@ -111,6 +117,10 @@ export default class SerialConnectionData {
     incompleteGroup?: SerialDataGroup = undefined;
 
     altitudeBaseHeight?: number = undefined;
+
+    baseLATITUDE?: number = undefined;
+    baseLONGITUDE?: number = undefined;
+    baseGPSALT?: number = undefined;
 
     readyRead() {
         if (!this.port || !this.port.readable) {
@@ -173,11 +183,17 @@ export default class SerialConnectionData {
         if (line.startsWith("//")) return;
         if (line.startsWith("/*")) return;
         if (line.startsWith("*/")) return;
+        if (line.includes("ovf")) {
+            if (this.incompleteGroup) {
+                this.incompleteGroup.markForDeletion = true;
+            }
+            return;
+        }
 
         try {
             let currentGroup = this.getCurrentGroup()
             if (line.startsWith("I")) { //Index info
-                if (currentGroup) {
+                if (currentGroup && !currentGroup.markForDeletion) {
                     this.serialData.push(currentGroup)
                 }
                 currentGroup = new SerialDataGroup();
@@ -196,7 +212,10 @@ export default class SerialConnectionData {
                             console.warn(`Removed corrupted group at I ${index}`)
                             this.serialData.splice(this.serialData.length - 2, 1);
                         }
-
+                        if (lastGroup.milliseconds <= preLastGroup.milliseconds) {
+                            console.warn(`Removed corrupted group at I ${index}`)
+                            this.serialData.splice(this.serialData.length - 1, 1);
+                        }
                     }
                 }
             } else if (currentGroup) {
@@ -209,7 +228,7 @@ export default class SerialConnectionData {
                     }
 
                     if (lineName == "ALT") {
-                        if (value > 0 && this.altitudeBaseHeight == 0) {
+                        if (value > 0 && this.altitudeBaseHeight == undefined) {
                             this.altitudeBaseHeight = value;
                         }
 
@@ -251,6 +270,27 @@ export default class SerialConnectionData {
                             }) as [number, number, number, number, number, number, number, number, number];
 
                             currentGroup.GPS = (new GPSDataGroup()).fill(...values);
+
+                            if (!this.baseLONGITUDE && currentGroup.GPS.longitude > 0) {
+                                this.baseLONGITUDE = currentGroup.GPS.longitude;
+                            }
+                            if (!this.baseLATITUDE && currentGroup.GPS.latitude > 0) {
+                                this.baseLATITUDE = currentGroup.GPS.latitude;
+                            }
+                            if (!this.baseGPSALT && currentGroup.GPS.altitude > -100) {
+                                this.baseGPSALT = currentGroup.GPS.altitude;
+                            }
+
+                            if (this.baseLONGITUDE) {
+                                currentGroup.baseLONGITUDE = this.baseLONGITUDE;
+                            }
+                            if (this.baseLATITUDE) {
+                                currentGroup.baseLATITUDE = this.baseLATITUDE;
+                            }
+                            if (this.baseGPSALT) {
+                                currentGroup.baseGPSALT = this.baseGPSALT;
+                            }
+
                             break;
                         }
                         default: {
