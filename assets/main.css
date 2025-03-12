@@ -139,7 +139,7 @@ button {
 
     padding: 10px;
 
-    overflow: hidden;
+    overflow: auto;
 
     display: flex;
     flex-direction: column;
@@ -149,6 +149,7 @@ button {
     display: flex;
     flex-direction: row;
     height: 48%;
+    min-height: 40vh;
     margin: 10px 0 10px 0;
 }
 

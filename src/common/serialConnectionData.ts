@@ -122,6 +122,8 @@ export default class SerialConnectionData {
     baseLONGITUDE?: number = undefined;
     baseGPSALT?: number = undefined;
 
+    baseMillis?: number = undefined;
+
     readyRead() {
         if (!this.port || !this.port.readable) {
             console.error("Port not readable");
@@ -202,6 +204,11 @@ export default class SerialConnectionData {
                 let [_name, index, millis] = line.split(" ");
                 currentGroup.I = Number(index);
                 currentGroup.milliseconds = Number(millis);
+
+                if (!this.baseMillis) {
+                    this.baseMillis = currentGroup.milliseconds;
+                }
+                currentGroup.milliseconds -= this.baseMillis;
 
                 if (this.serialData.length >= 2) {
                     let preLastGroup = this.serialData[this.serialData.length - 2];

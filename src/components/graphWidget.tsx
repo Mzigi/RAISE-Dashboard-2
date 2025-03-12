@@ -14,6 +14,9 @@ const shrinkArrayAware = (array: any[], size: number) => {
 }
 
 function numAsStr(num: number): string {
+    if (num >= 1000) {
+        return (Math.round(num * 1)/1).toString();
+    }
     return (Math.round(num * 10)/10).toString();
 }
 
@@ -33,6 +36,9 @@ export class GraphDescription {
 
     strokeStyle: string = "#426cf5";
     name: string = "Unknown";
+
+    xSuffix: string = "";
+    ySuffix: string = "";
 
     get indices() {
         if (!this._mappedIndices) {
@@ -141,7 +147,7 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown" 
                 SDL_RenderDrawLine(renderInfo.renderer, bounds.x + 2, bounds.y + height, bounds.x - 6, bounds.y + height); //number indent
                 SDL_SetRenderDrawColor(renderInfo.renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
                 SDL_RenderDrawLine(renderInfo.renderer, bounds.x, bounds.y + height, bounds.x + bounds.w, bounds.y + height); //long grid line
-                drawText(renderInfo.renderer, renderInfo.robotoSmall, numAsStr(value), bounds.x - PADDING_TEXT_LEFT, bounds.y + height - LETTER_HEIGHT / 2, 1.0, 0);
+                drawText(renderInfo.renderer, renderInfo.robotoSmall, numAsStr(value) + graphDescriptions[0].ySuffix, bounds.x - PADDING_TEXT_LEFT, bounds.y + height - LETTER_HEIGHT / 2, 1.0, 0);
             }
             for (let i = 0; i < 5; i++) { //x axis
                 let height = mapNum(i, 0.0, 4.0, PADDING, (bounds.w - PADDING));
@@ -152,7 +158,7 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown" 
                 SDL_SetRenderDrawColor(renderInfo.renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
                 SDL_RenderDrawLine(renderInfo.renderer, bounds.x + height, bounds.y, bounds.x + height, bounds.y + bounds.h); //long grid line
 
-                drawText(renderInfo.renderer, renderInfo.robotoSmall, numAsStr(value), bounds.x + height, bounds.y + bounds.h + PADDING_TEXT_BOTTOM, 0.5, 0.0);
+                drawText(renderInfo.renderer, renderInfo.robotoSmall, numAsStr(value) + graphDescriptions[0].xSuffix, bounds.x + height, bounds.y + bounds.h + PADDING_TEXT_BOTTOM, 0.5, 0.0);
             }
         }
 

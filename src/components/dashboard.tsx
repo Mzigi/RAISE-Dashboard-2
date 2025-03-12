@@ -45,6 +45,8 @@ function measure(lat1: number, lon1: number, lat2: number, lon2: number){  // ge
 export default function Dashboard({ serialData, stationPositions, sendSerial, serialLog, setStationPositions }: { serialData: SerialDataGroup[], stationPositions: Vector3[], sendSerial: Function, serialLog: string, setStationPositions: Function }): React.JSX.Element {
     //temperature
     const analogTemperatureGD = new GraphDescription(serialData, serialData);
+    analogTemperatureGD.xSuffix = "s";
+    analogTemperatureGD.ySuffix = "°C";
     analogTemperatureGD.name = "Analog";
     analogTemperatureGD.valueFunc = (serialDataGroup: SerialDataGroup) => {
         return analogTemperatureCalibration2(serialDataGroup.T2);
@@ -55,6 +57,8 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     }
 
     const bmpTemperatureGD = new GraphDescription(serialData, serialData);
+    bmpTemperatureGD.xSuffix = "s";
+    bmpTemperatureGD.ySuffix = "°C";
     bmpTemperatureGD.name = "BMP";
     bmpTemperatureGD.strokeStyle = "#ff5959"
     bmpTemperatureGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.T};
@@ -66,6 +70,8 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     //altitude
     const gpsAltitudeGD = new GraphDescription(serialData, serialData);
     gpsAltitudeGD.name = "GPS";
+    gpsAltitudeGD.xSuffix = "s";
+    gpsAltitudeGD.ySuffix = "m";
     gpsAltitudeGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.GPS.altitude};
     gpsAltitudeGD.indexFunc = millisIndexFunc;
     gpsAltitudeGD.invalidFunc = (val: number) => {
@@ -74,11 +80,41 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
 
     const bmpAltitudeGD = new GraphDescription(serialData, serialData);
     bmpAltitudeGD.name = "BMP";
+    bmpAltitudeGD.xSuffix = "s";
+    bmpAltitudeGD.ySuffix = "m";
     bmpAltitudeGD.strokeStyle = "#ff5959"
     bmpAltitudeGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.ALT - serialDataGroup.baseALT};
     bmpAltitudeGD.indexFunc = millisIndexFunc;
     bmpAltitudeGD.invalidFunc = (val: number) => {
         return val <= -1 || val >= 10000 || isNaN(val) || val == 0;
+    }
+
+    //derived
+    let lastAltitude: number | undefined = undefined;
+    let lastI: number = 0;
+
+    const bmpAltitudeDerivedGD = new GraphDescription(serialData, serialData);
+    bmpAltitudeDerivedGD.name = "BMP";
+    bmpAltitudeDerivedGD.strokeStyle = "#ff5959"
+    bmpAltitudeDerivedGD.valueFunc = (serialDataGroup: SerialDataGroup) => {
+        let toReturn = -96548
+
+        if (lastAltitude) {
+            toReturn = (serialDataGroup.ALT - lastAltitude) / (serialDataGroup.milliseconds / 1000 - lastI);
+        }
+
+        if (!(serialDataGroup.ALT <= -1 || serialDataGroup.ALT >= 10000 || isNaN(serialDataGroup.ALT) || serialDataGroup.ALT == 0)) {
+            lastAltitude = serialDataGroup.ALT
+            lastI = serialDataGroup.milliseconds / 1000
+        } else {
+            toReturn = -96548
+        }
+        
+        return toReturn
+    };
+    bmpAltitudeDerivedGD.indexFunc = millisIndexFunc;
+    bmpAltitudeDerivedGD.invalidFunc = (val: number) => {
+        return val == -96548;
     }
 
     //3d description
@@ -117,12 +153,19 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     let panelDescriptions = []
     for (let i = 0; i < 4; i++) {
         const panelGD = new GraphDescription(serialData, serialData);
+        panelGD.xSuffix = "s";
+        panelGD.ySuffix = "V";
         panelGD.name = "Panel " + (i + 1);
         panelGD.strokeStyle = [panelGD.strokeStyle, "#ff5959", "#1f8f3d", "#c2b611"][i];
-        panelGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.P.get(i)};
+        panelGD.valueFunc = (serialDataGroup: SerialDataGroup) => {
+            if (serialDataGroup.P.get(i) >= 1023) {
+                return -999;
+            }
+            return serialDataGroup.P.get(i) * 5 / 1023
+        };
         panelGD.indexFunc = millisIndexFunc;
         panelGD.invalidFunc = (val: number) => {
-            return val >= 1023;
+            return val <= -1;
         }
         panelDescriptions.push(panelGD);
     }
@@ -138,6 +181,9 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
             <CanvasGraph3DWidget widgetName="Position" graphDescs={[gps3dGD, test3dGD]} markedPoints={stationPositions} setMarkedPoints={setStationPositions}></CanvasGraph3DWidget>
             <StatusWidget serialDataGroup={serialData[serialData.length - 1]} sendSerial={sendSerial}/>
             <ConsoleWidget serialLog={serialLog}/>
+        </div>
+        <div className="widgets-row">
+            
         </div>
     </div>
     );
