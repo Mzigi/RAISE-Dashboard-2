@@ -192,7 +192,7 @@ export default class SerialConnectionData {
                     let lastGroup = this.getLastGroup();
 
                     if (lastGroup && preLastGroup) {
-                        if (preLastGroup.milliseconds && preLastGroup.milliseconds >= lastGroup.milliseconds && preLastGroup.milliseconds >= Number(millis)) {
+                        if (preLastGroup.milliseconds && preLastGroup.milliseconds >= lastGroup.milliseconds && preLastGroup.milliseconds >= Number(millis) || preLastGroup.milliseconds >= 24 * 60 * 60 * 1000) {
                             console.warn(`Removed corrupted group at I ${index}`)
                             this.serialData.splice(this.serialData.length - 2, 1);
                         }

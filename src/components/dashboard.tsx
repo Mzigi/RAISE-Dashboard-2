@@ -39,7 +39,7 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     };
     analogTemperatureGD.indexFunc = millisIndexFunc;
     analogTemperatureGD.invalidFunc = (val: number) => {
-        return val >= 100 || val <= -273;
+        return val >= 40 || val <= -30;
     }
 
     const bmpTemperatureGD = new GraphDescription(serialData, serialData);
@@ -48,7 +48,7 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     bmpTemperatureGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.T};
     bmpTemperatureGD.indexFunc = millisIndexFunc;
     bmpTemperatureGD.invalidFunc = (val: number) => {
-        return val <= -1;
+        return val >= 40 || val <= -30 || val == -1;
     }
 
     //altitude
