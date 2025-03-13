@@ -363,7 +363,7 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
 
         context.stroke();
 
-        let endVal = graphDesc.values(rssi)[graphDesc.values.length - 1]
+        let endVal = graphDesc.values(rssi)[graphDesc.values(rssi).length - 1]
 
         if (endVal) {
             //console.log(endVal);
