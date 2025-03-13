@@ -67,6 +67,25 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
         return val >= 40 || val <= -30 || val == -1;
     }
 
+    //latitude and longitude
+    const gpsLatitudeGD = new GraphDescription(serialData, serialData);
+    gpsLatitudeGD.name = "Position";
+    gpsLatitudeGD.xSuffix = "m";
+    gpsLatitudeGD.ySuffix = "m";
+    gpsLatitudeGD.valueFunc = (serialDataGroup: SerialDataGroup) => {
+        return serialDataGroup.GPS.latitude;
+    }
+    gpsLatitudeGD.indexFunc = (serialDataGroup: SerialDataGroup) => {
+        if (serialDataGroup.GPS.longitude <= 15) {
+            return 0;
+        }
+        return serialDataGroup.GPS.longitude;
+    }
+    gpsLatitudeGD.invalidFunc = (val: number) => {
+        return val >= 70 || val <= 50;
+    }
+
+
     //altitude
     const gpsAltitudeGD = new GraphDescription(serialData, serialData);
     gpsAltitudeGD.name = "GPS";
@@ -87,6 +106,17 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     bmpAltitudeGD.indexFunc = millisIndexFunc;
     bmpAltitudeGD.invalidFunc = (val: number) => {
         return val <= -1 || val >= 10000 || isNaN(val) || val == 0;
+    }
+
+    const bmpPressureGD = new GraphDescription(serialData, serialData);
+    bmpPressureGD.name = "BMP";
+    bmpPressureGD.xSuffix = "s";
+    bmpPressureGD.ySuffix = "hPa";
+    bmpPressureGD.strokeStyle = "#ff5959"
+    bmpPressureGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.PRS};
+    bmpPressureGD.indexFunc = millisIndexFunc;
+    bmpPressureGD.invalidFunc = (val: number) => {
+        return val < 300 || val > 1100 || isNaN(val) || val == 0;
     }
 
     //derived
@@ -183,7 +213,7 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
             <ConsoleWidget serialLog={serialLog}/>
         </div>
         <div className="widgets-row">
-            
+            <GraphWidget widgetName="Pressure" graphDescriptions={[bmpPressureGD]} leftPadding={100}/>
         </div>
     </div>
     );

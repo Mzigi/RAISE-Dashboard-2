@@ -149,7 +149,7 @@ button {
     display: flex;
     flex-direction: row;
     height: 48%;
-    min-height: 40vh;
+    min-height: 43vh;
     margin: 10px 0 10px 0;
 }
 

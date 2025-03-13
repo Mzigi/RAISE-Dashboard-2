@@ -80,7 +80,7 @@ export class GraphDescription {
     }
 }
 
-export default function GraphWidget({ graphDescriptions, widgetName = "Unknown" }: { graphDescriptions: GraphDescription[], widgetName?: string }): React.JSX.Element {
+export default function GraphWidget({ graphDescriptions, widgetName = "Unknown", leftPadding = 70 }: { graphDescriptions: GraphDescription[], widgetName?: string, leftPadding?: number }): React.JSX.Element {
     const canvasRef = useRef(null); 
     let xyMousePos = useMouseMove(1000 / 30, "client");
     let mousePos = [xyMousePos.x, xyMousePos.y];
@@ -135,7 +135,7 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown" 
             }
         }
 
-        let bounds = new UIBoundary(canvas.clientWidth, canvas.clientHeight);
+        let bounds = new UIBoundary(canvas.clientWidth, canvas.clientHeight, leftPadding);
 
         //draw numbers
         if (minX !== maxX) {

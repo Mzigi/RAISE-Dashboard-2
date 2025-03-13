@@ -4,9 +4,9 @@ export class UIBoundary {
     w: number = 0;
     h: number = 0;
 
-    constructor(canvasWidth: number, canvasHeight: number) {
+    constructor(canvasWidth: number, canvasHeight: number, newLeftPadding: number = 70) {
         const RIGHT_PADDING = 20;
-        const LEFT_PADDING = 70;
+        const LEFT_PADDING = newLeftPadding;
 
         const TOP_PADDING = 30;
         const BOTTOM_PADDING = 30;
