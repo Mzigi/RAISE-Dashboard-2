@@ -137,7 +137,7 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     gps3dGD.strokeStyle = "#f00"
     gps3dGD.valueFunc = (serialDataGroup: SerialDataGroup, rssi: [number,number,number]) => {
         let zDist = measure(serialDataGroup.GPS.latitude, serialDataGroup.baseLONGITUDE, serialDataGroup.baseLATITUDE, serialDataGroup.baseLONGITUDE);
-        let xDist = measure(serialDataGroup.baseLATITUDE, serialDataGroup.GPS.longitude, serialDataGroup.baseLATITUDE, serialDataGroup.baseLONGITUDE);
+        let xDist = -measure(serialDataGroup.baseLATITUDE, serialDataGroup.GPS.longitude, serialDataGroup.baseLATITUDE, serialDataGroup.baseLONGITUDE);
 
         let resultPos = new Vector3(xDist, 0, zDist)
         resultPos.y = serialDataGroup.ALT - serialDataGroup.baseALT;
