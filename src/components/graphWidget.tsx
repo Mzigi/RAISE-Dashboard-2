@@ -89,7 +89,7 @@ export class GraphDescription {
 
 export type GraphStyle = "line" | "bar"
 
-export default function GraphWidget({ graphDescriptions, widgetName = "Unknown", leftPadding = 70, graphStyle = "line", yGridVisible = true, yAxisVisible = true, xGridVisible = true, xAxisVisible = true, yAxisLineCount = 5, xAxisLineCount = 5 }: { graphDescriptions: GraphDescription[], widgetName?: string, leftPadding?: number, graphStyle?: GraphStyle, yGridVisible?: boolean, yAxisVisible?: boolean, xGridVisible?: boolean, xAxisVisible?: boolean, yAxisLineCount?: number, xAxisLineCount?: number }): React.JSX.Element {
+export default function GraphWidget({ graphDescriptions, widgetName = "Unknown", leftPadding = 70, graphStyle = "line", yGridVisible = true, yAxisVisible = true, xGridVisible = true, xAxisVisible = true, yAxisLineCount = 5, xAxisLineCount = 5, scale = 1 }: { graphDescriptions: GraphDescription[], widgetName?: string, leftPadding?: number, graphStyle?: GraphStyle, yGridVisible?: boolean, yAxisVisible?: boolean, xGridVisible?: boolean, xAxisVisible?: boolean, yAxisLineCount?: number, xAxisLineCount?: number, scale?: number }): React.JSX.Element {
     const canvasRef = useRef(null); 
     let xyMousePos = useMouseMove(1000 / 30, "client");
     let mousePos = [xyMousePos.x, xyMousePos.y];
@@ -105,20 +105,21 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown",
 
         if (!context) return () => {};
         SDL_SetRenderDrawColor(context, 255, 255, 255, SDL_ALPHA_OPAQUE);
-        context.lineWidth = 2;
+        context.lineWidth = 2 * scale;
         context.clearRect(0, 0, canvas.width, canvas.height);
 
         const renderInfo = {
             renderer: context,
-            robotoSmall: 18,
-            roboto: 24,
+            robotoSmall: 18 * scale,
+            roboto: 24 * scale,
         }
 
-        const PADDING = 12;
-        const PADDING_TEXT_LEFT = 10;
-        const PADDING_TEXT_BOTTOM = 8;
-        const LETTER_HEIGHT = 18;
-        const BIG_LETTER_HEIGHT = 24
+        leftPadding *= scale;
+        const PADDING = 12 * scale;
+        const PADDING_TEXT_LEFT = 10 * scale;
+        const PADDING_TEXT_BOTTOM = 8 * scale;
+        const LETTER_HEIGHT = 18 * scale;
+        const BIG_LETTER_HEIGHT = 24 * scale;
 
         let minY = 0;
         let maxY = 0;
@@ -150,7 +151,7 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown",
             }
         }
 
-        let bounds = new UIBoundary(canvas.clientWidth, canvas.clientHeight, leftPadding);
+        let bounds = new UIBoundary(canvas.clientWidth, canvas.clientHeight, leftPadding, scale);
 
         //draw numbers
         if (minX !== maxX) {
@@ -275,9 +276,11 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown",
                     let i = 0;
                     for (let point of points) {
                             let pointY = (bounds.y * 2 + bounds.h) - mapNum(point.y, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING);
+                            let zeroPointY = Math.max(Math.min((bounds.y * 2 + bounds.h) - mapNum(0, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING), bounds.y + bounds.h), bounds.y);
                             let pointX = mapNum(point.x, minX, maxX, bounds.x + PADDING, bounds.x + bounds.w - PADDING);
                             let width = bounds.w / points.length * graphDesc.widthPercentage
-                            context.fillRect(pointX - width / 2,bounds.y + pointY - bounds.y,width, bounds.h - (pointY - bounds.y));
+                            //context.fillRect(pointX - width / 2, bounds.y + pointY - bounds.y, width, bounds.h - (pointY - bounds.y));
+                            context.fillRect(pointX - width / 2, pointY, width, zeroPointY - pointY);
                         i++;
                     }
                     
@@ -351,29 +354,29 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown",
                 let strWidth = textMeasure.width;
                 let strHeight = textMeasure.actualBoundingBoxAscent;
 
-                const rightOffset = 5;
-                const textOffset = 16;
-                const lineWidth = 12;
-                const lineOffset = 3;
+                const rightOffset = 5 * scale;
+                const textOffset = 16 * scale;
+                const lineWidth = 12 * scale;
+                const lineOffset = 3 * scale;
 
-                let ux = bounds.x + 5;
-                let uy = bounds.y + 5 + 25 * i;
+                let ux = bounds.x + 5 * scale;
+                let uy = bounds.y + 5 * scale + 25 * i * scale;
                 let w = textOffset + strWidth + rightOffset;
-                let h = 20;
+                let h = 20 * scale;
 
                 context.fillRect(ux, uy, w, h);
 
-                context.lineWidth = 1;
+                context.lineWidth = 1 * scale;
                 SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
                 SDL_RenderDrawLine(context, ux, uy, ux + w, uy);
                 SDL_RenderDrawLine(context, ux + w, uy, ux + w, uy + h);
                 SDL_RenderDrawLine(context, ux + w, uy + h, ux, uy + h);
                 SDL_RenderDrawLine(context, ux, uy + h, ux, uy);
 
-                drawText(context, renderInfo.robotoSmall, graphDesc.name, ux + textOffset, uy + 3, 0, 0);
+                drawText(context, renderInfo.robotoSmall, graphDesc.name, ux + textOffset, uy + 3 * scale, 0, 0);
 
                 context.strokeStyle = graphDesc.strokeStyle;
-                context.lineWidth = 3;
+                context.lineWidth = 3 * scale;
                 context.globalAlpha = 1;
                 SDL_RenderDrawLine(context, ux + lineOffset, uy + h / 2, ux + lineWidth + lineOffset, uy + h / 2);
 
@@ -395,7 +398,7 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown",
         drawText(renderInfo.renderer, renderInfo.robotoSmall, std::vformat("{}", std::make_format_args(maxY)).c_str(), bounds.x - PADDING_TEXT_LEFT, bounds.y + PADDING - LETTER_HEIGHT / 2, 1.0, 0);
         */
         if (widgetName.length > 0) {
-            drawText(renderInfo.renderer, renderInfo.roboto, widgetName, bounds.x + bounds.w / 2, bounds.y - 26, 0.5, 0.0);
+            drawText(renderInfo.renderer, renderInfo.roboto, widgetName, bounds.x + bounds.w / 2, bounds.y - 26 * scale, 0.5, 0.0);
         }
 
         return () => {

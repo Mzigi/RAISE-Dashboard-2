@@ -318,6 +318,7 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
         const panelGD = new GraphDescription(serialData, serialData);
         panelGD.xSuffix = "s";
         panelGD.ySuffix = "V";
+        panelGD.maxMinY = 0;
         panelGD.name = "Panel " + (i + 1);
         panelGD.strokeStyle = [panelGD.strokeStyle, "#ff5959", "#1f8f3d", "#c2b611"][i];
         panelGD.valueFunc = (serialDataGroup: SerialDataGroup) => {
@@ -338,7 +339,7 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
         <div className="widgets-row">
             <GraphWidget graphDescriptions={[analogTemperatureGD, bmpTemperatureGD]} widgetName={"Temperature"}/>
             <GraphWidget graphDescriptions={[gpsAltitudeGD, bmpAltitudeGD]} widgetName={"Altitude"}/>
-            <GraphWidget graphDescriptions={panelDescriptions} widgetName={"Solar Panels"}/>
+            <GraphWidget graphDescriptions={panelDescriptions} yAxisLineCount={6} widgetName={"Solar Panels"}/>
         </div>
         <div className="widgets-row">
             <CanvasGraph3DWidget widgetName="Position" graphDescs={[gps3dGD]} markedPoints={stationPositions} setMarkedPoints={setStationPositions}></CanvasGraph3DWidget>

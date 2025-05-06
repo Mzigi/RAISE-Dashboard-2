@@ -4,12 +4,12 @@ export class UIBoundary {
     w: number = 0;
     h: number = 0;
 
-    constructor(canvasWidth: number, canvasHeight: number, newLeftPadding: number = 70) {
-        const RIGHT_PADDING = 20;
-        const LEFT_PADDING = newLeftPadding;
+    constructor(canvasWidth: number, canvasHeight: number, newLeftPadding: number = 70, scale: number = 1) {
+        const RIGHT_PADDING = 20 * scale;
+        const LEFT_PADDING = newLeftPadding; //DONT MULTIPLY BY SCALE, it should already be done before calling this
 
-        const TOP_PADDING = 30;
-        const BOTTOM_PADDING = 30;
+        const TOP_PADDING = 30 * scale;
+        const BOTTOM_PADDING = 30 * scale;
 
         this.x += LEFT_PADDING;
         this.y += TOP_PADDING
