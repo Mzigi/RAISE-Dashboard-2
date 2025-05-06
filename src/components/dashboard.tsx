@@ -3,7 +3,7 @@ import GraphWidget, { GraphDescription } from "./graphWidget";
 import SerialConnectionData, { SerialDataGroup } from "../common/serialConnectionData";
 import Graph3DWidget from "./graph3DWidget";
 import CanvasGraph3DWidget, { GraphDescription3 } from "./canvasGraph3DWidget";
-import { Vector3 } from "../rendering/core/model";
+import { Vector2, Vector3 } from "../rendering/core/model";
 import { basicTriangulation, rssiToDistance } from "../common/triangulation";
 import StatusWidget from "./statusWidget";
 import ConsoleWidget from "./consoleWidget";
@@ -42,7 +42,7 @@ function measure(lat1: number, lon1: number, lat2: number, lon2: number){  // ge
     return d * 1000; // meters
 }
 
-export default function Dashboard({ serialData, stationPositions, sendSerial, serialLog, setStationPositions }: { serialData: SerialDataGroup[], stationPositions: Vector3[], sendSerial: Function, serialLog: string, setStationPositions: Function }): React.JSX.Element {
+export default function Dashboard({ serialData, stationPositions, sendSerial, serialLog, setStationPositions, corruptedSerialData }: { serialData: SerialDataGroup[], stationPositions: Vector3[], sendSerial: Function, serialLog: string, setStationPositions: Function, corruptedSerialData: SerialDataGroup[] }): React.JSX.Element {
     //temperature
     const analogTemperatureGD = new GraphDescription(serialData, serialData);
     analogTemperatureGD.xSuffix = "s";
@@ -179,6 +179,139 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
         //return false
     }
 
+    let validGPSPos: [number,Vector3][] = [];
+    for (let group of serialData) {
+        let zDist = measure(group.GPS.latitude, group.baseLONGITUDE, group.baseLATITUDE, group.baseLONGITUDE);
+        let xDist = -measure(group.baseLATITUDE, group.GPS.longitude, group.baseLATITUDE, group.baseLONGITUDE);
+
+        let val = new Vector3(xDist, 0, zDist)
+        val.y = group.ALT - group.baseALT;
+        if (!(isNaN(val.x) || isNaN(val.y) || isNaN(val.z) || val.x <= -3000 || val.x >= 3000 || val.z <= -3000 || val.z >= 3000)) {
+            validGPSPos.push([group.milliseconds, val]);
+        }
+    }
+    console.log(validGPSPos);
+
+    const estGPS3dGD = new GraphDescription3(serialData, serialData);
+    estGPS3dGD.name = "Estimated GPS";
+    estGPS3dGD.strokeStyle = "#00f";
+    estGPS3dGD.indexFunc = millisIndexFunc;
+    estGPS3dGD.valueFunc = (serialDataGroup: SerialDataGroup, rssi: [number,number,number]) => {
+        let ms = serialDataGroup.milliseconds;
+        let altitude = serialDataGroup.ALT - serialDataGroup.baseALT;
+        if (altitude <= -1 || altitude >= 10000 || isNaN(altitude) || altitude == 0) {
+            return new Vector3(-9999);
+        }
+
+        //find gps position based on ms
+        let gpsPos = null;
+        let nextgpsPos = null;
+        let msPrev = null;
+        let msNext = null;
+
+        let gpsI = 0;
+        while (!gpsPos || !nextgpsPos) {
+            let val = validGPSPos[gpsI][1]
+            if (ms >= validGPSPos[gpsI][0] && validGPSPos[gpsI + 1] && ms <= validGPSPos[gpsI + 1][0] && !(isNaN(val.x) || isNaN(val.y) || isNaN(val.z) || val.x <= -3000 || val.x >= 3000 || val.z <= -3000 || val.z >= 3000)) {
+                if (!gpsPos) {
+                    msPrev = validGPSPos[gpsI][0]
+                    gpsPos = val;
+                } else {
+                    msNext = validGPSPos[gpsI][0]
+                    nextgpsPos = val;
+                }
+            }
+
+            gpsI++;
+            if (gpsI >= validGPSPos.length) {
+                break;
+            }
+        }
+
+        //interpolate gps positions
+        if (gpsPos && nextgpsPos && msNext != null && msPrev != null) {
+            let maxMsDiff = msNext - msPrev;
+            let msDiff = ms - msPrev;
+            console.log("a")
+            console.log(maxMsDiff)
+            console.log(msDiff)
+            console.log(msDiff / maxMsDiff)
+
+            let diffVec = nextgpsPos.minus(gpsPos);
+            diffVec = diffVec.multiply(new Vector3(msDiff / maxMsDiff));
+
+            let resultVec = gpsPos.add(diffVec);
+            resultVec.y = altitude;
+
+            return resultVec;
+        }
+        console.log(gpsPos, nextgpsPos, msNext, msPrev);
+
+        if (!gpsPos || !nextgpsPos) {
+            return new Vector3(-9999);
+        }
+
+        console.error("what")
+        return new Vector3(-9999);
+    }
+    estGPS3dGD.invalidFunc = (val: Vector3) => {
+        return isNaN(val.x) || isNaN(val.y) || isNaN(val.z) || val.x <= -3000 || val.x >= 3000 || val.z <= -3000 || val.z >= 3000;
+        //return false
+    }
+
+    //missing data
+    
+    let missingPoints: number[] = [];
+
+    let largestI = 0;
+    let lowestI = 10000000;
+    for (let serialDataPoint of serialData) {
+        if (serialDataPoint.I > largestI && serialDataPoint.I <= 99999) {
+            largestI = serialDataPoint.I;
+            if (serialDataPoint.I < lowestI) {
+                lowestI = serialDataPoint.I
+            }
+        }
+    }
+
+    for (let i = lowestI; i <= largestI; i++) {
+        let foundPoint = false;
+        let pointCorrupt = false;
+        for (let serialDataPoint of serialData) {
+            if (i == serialDataPoint.I) {
+                foundPoint = true;
+                if (serialDataPoint.ALT - serialDataPoint.baseALT <= -10 && serialDataPoint.ALT - serialDataPoint.baseALT >= 2000) {
+                    pointCorrupt = true;
+                }
+            }
+        }
+
+        if (!foundPoint || pointCorrupt) {
+            missingPoints.push(i);
+        }
+    }
+
+    const missingDataGD = new GraphDescription(missingPoints, missingPoints);
+    missingDataGD.name = "Missing Data";
+    missingDataGD.xSuffix = "s";
+    missingDataGD.ySuffix = "";
+    missingDataGD.strokeStyle = "#999";
+    missingDataGD.maxMinY = 23
+    //missingDataGD.maxMinX = 0;
+    missingDataGD.graphStyle = "bar";
+    missingDataGD.hasLabel = false;
+    missingDataGD.widthPercentage = 0.52;
+    missingDataGD.valueFunc = (num: number) => {
+        return 23.5;
+    };
+    missingDataGD.indexFunc = (num: number) => {
+        return num * 0.5 - lowestI * 0.5;
+    };
+    missingDataGD.invalidFunc = (val: number) => {
+        return val == 0;
+    }
+    
+
     //solar panels
     let panelDescriptions = []
     for (let i = 0; i < 4; i++) {
@@ -208,12 +341,14 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
             <GraphWidget graphDescriptions={panelDescriptions} widgetName={"Solar Panels"}/>
         </div>
         <div className="widgets-row">
-            <CanvasGraph3DWidget widgetName="Position" graphDescs={[gps3dGD, test3dGD]} markedPoints={stationPositions} setMarkedPoints={setStationPositions}></CanvasGraph3DWidget>
+            <CanvasGraph3DWidget widgetName="Position" graphDescs={[gps3dGD]} markedPoints={stationPositions} setMarkedPoints={setStationPositions}></CanvasGraph3DWidget>
             <StatusWidget serialDataGroup={serialData[serialData.length - 1]} sendSerial={sendSerial}/>
             <ConsoleWidget serialLog={serialLog}/>
         </div>
         <div className="widgets-row">
             <GraphWidget widgetName="Pressure" graphDescriptions={[bmpPressureGD]} leftPadding={100}/>
+            <GraphWidget widgetName="Missing Data" graphDescriptions={[missingDataGD]} yAxisVisible={false} yGridVisible={false} />
+            <GraphWidget graphDescriptions={[analogTemperatureGD, bmpTemperatureGD, missingDataGD]} widgetName={"Temperature"}/>
         </div>
     </div>
     );

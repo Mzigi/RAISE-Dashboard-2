@@ -178,7 +178,7 @@ export default function App(): React.JSX.Element {
     return (<>
         <SerialContext.Provider value={serialData}>
             <TopBar serialConnect={serialConnect} serialConnectionStatus={serialConnectionStatus} serialClose={serialClose} saveLog={saveLog} downloadLog={downloadLog} parseLines={parseLines}/>
-            <Dashboard serialData={serialData.serialData} stationPositions={stationPositions} sendSerial={sendSerial} serialLog={serialData.log} setStationPositions={setStationPositions}/>
+            <Dashboard serialData={serialData.serialData} corruptedSerialData={serialData.corruptedSerialData} stationPositions={stationPositions} sendSerial={sendSerial} serialLog={serialData.log} setStationPositions={setStationPositions}/>
         </SerialContext.Provider>
     </>);
 }

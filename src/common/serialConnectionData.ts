@@ -114,6 +114,7 @@ export default class SerialConnectionData {
     lastLine: string = "";
 
     serialData: SerialDataGroup[] = [];
+    corruptedSerialData: SerialDataGroup[] = [];
     incompleteGroup?: SerialDataGroup = undefined;
 
     altitudeBaseHeight?: number = undefined;
@@ -123,6 +124,9 @@ export default class SerialConnectionData {
     baseGPSALT?: number = undefined;
 
     baseMillis?: number = undefined;
+
+    removedGroupCount: number = 0;
+    totalGroupCount: number = 0;
 
     readyRead() {
         if (!this.port || !this.port.readable) {
@@ -195,8 +199,13 @@ export default class SerialConnectionData {
         try {
             let currentGroup = this.getCurrentGroup()
             if (line.startsWith("I")) { //Index info
+                this.totalGroupCount++;
+
                 if (currentGroup && !currentGroup.markForDeletion) {
                     this.serialData.push(currentGroup)
+                } else if (currentGroup?.markForDeletion) {
+                    this.corruptedSerialData.push(currentGroup);
+                    this.removedGroupCount++;
                 }
                 currentGroup = new SerialDataGroup();
                 this.incompleteGroup = currentGroup;
@@ -217,15 +226,17 @@ export default class SerialConnectionData {
                     if (lastGroup && preLastGroup) {
                         if (preLastGroup.milliseconds && preLastGroup.milliseconds >= lastGroup.milliseconds && preLastGroup.milliseconds >= Number(millis) || preLastGroup.milliseconds >= 24 * 60 * 60 * 1000) {
                             console.warn(`Removed corrupted group at I ${index}`)
-                            this.serialData.splice(this.serialData.length - 2, 1);
+                            this.corruptedSerialData.push(this.serialData.splice(this.serialData.length - 2, 1)[0]);
+                            this.removedGroupCount++;
                         }
                         if (lastGroup.milliseconds <= preLastGroup.milliseconds) {
                             console.warn(`Removed corrupted group at I ${index}`)
-                            this.serialData.splice(this.serialData.length - 1, 1);
+                            this.corruptedSerialData.push(this.serialData.splice(this.serialData.length - 1, 1)[0]);
+                            this.removedGroupCount++;
                         }
                     }
                 }
-            } else if (currentGroup) {
+            } else if (currentGroup && line.includes("=")) {
                 let lineName = line.split("=")[0];
 
                 if (["T","T2","PRS","ALT","PING"].includes(lineName)) {

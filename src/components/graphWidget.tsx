@@ -36,9 +36,16 @@ export class GraphDescription {
 
     strokeStyle: string = "#426cf5";
     name: string = "Unknown";
+    widthPercentage: number = 0.8; //for graph styles with width, bars
+
+    maxMinY?: number = undefined;
+    maxMinX?: number = undefined;
 
     xSuffix: string = "";
     ySuffix: string = "";
+
+    hasLabel: boolean = true;
+    graphStyle: GraphStyle = "line";
 
     get indices() {
         if (!this._mappedIndices) {
@@ -80,7 +87,9 @@ export class GraphDescription {
     }
 }
 
-export default function GraphWidget({ graphDescriptions, widgetName = "Unknown", leftPadding = 70 }: { graphDescriptions: GraphDescription[], widgetName?: string, leftPadding?: number }): React.JSX.Element {
+export type GraphStyle = "line" | "bar"
+
+export default function GraphWidget({ graphDescriptions, widgetName = "Unknown", leftPadding = 70, graphStyle = "line", yGridVisible = true, yAxisVisible = true, xGridVisible = true, xAxisVisible = true, yAxisLineCount = 5, xAxisLineCount = 5 }: { graphDescriptions: GraphDescription[], widgetName?: string, leftPadding?: number, graphStyle?: GraphStyle, yGridVisible?: boolean, yAxisVisible?: boolean, xGridVisible?: boolean, xAxisVisible?: boolean, yAxisLineCount?: number, xAxisLineCount?: number }): React.JSX.Element {
     const canvasRef = useRef(null); 
     let xyMousePos = useMouseMove(1000 / 30, "client");
     let mousePos = [xyMousePos.x, xyMousePos.y];
@@ -131,6 +140,12 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown",
                     minX = Math.min(...graphDesc.real_indices.filter((val) => val != null));
                     maxX = Math.max(...graphDesc.real_indices.filter((val) => val != null));
                 }
+                if (graphDesc.maxMinY != undefined) {
+                    minY = Math.min(minY, graphDesc.maxMinY);
+                }
+                if (graphDesc.maxMinX != undefined) {
+                    minX = Math.min(minX, graphDesc.maxMinX)
+                }
                 boundsSet = true;
             }
         }
@@ -139,89 +154,138 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown",
 
         //draw numbers
         if (minX !== maxX) {
-            for (let i = 0; i < 5; i++) { //y axis
-                let height = mapNum(i, 0.0, 4.0, PADDING, (bounds.h - PADDING));
-                let value = floor(mapNum(i, 0.0, 4.0, maxY, minY) * 100.0 + 0.5) / 100.0;
+            if (yAxisVisible) {
+                for (let i = 0; i < yAxisLineCount; i++) { //y axis
+                    let height = mapNum(i, 0.0, yAxisLineCount - 1, PADDING, (bounds.h - PADDING));
+                    let value = floor(mapNum(i, 0.0, yAxisLineCount - 1, maxY, minY) * 100.0 + 0.5) / 100.0;
 
-                SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-                SDL_RenderDrawLine(renderInfo.renderer, bounds.x + 2, bounds.y + height, bounds.x - 6, bounds.y + height); //number indent
-                SDL_SetRenderDrawColor(renderInfo.renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
-                SDL_RenderDrawLine(renderInfo.renderer, bounds.x, bounds.y + height, bounds.x + bounds.w, bounds.y + height); //long grid line
-                drawText(renderInfo.renderer, renderInfo.robotoSmall, numAsStr(value) + graphDescriptions[0].ySuffix, bounds.x - PADDING_TEXT_LEFT, bounds.y + height - LETTER_HEIGHT / 2, 1.0, 0);
+                    if (yAxisVisible) {
+                        SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+                        SDL_RenderDrawLine(renderInfo.renderer, bounds.x + 2, bounds.y + height, bounds.x - 6, bounds.y + height); //number indent
+                    }
+                    if (yGridVisible) {
+                        SDL_SetRenderDrawColor(renderInfo.renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
+                        SDL_RenderDrawLine(renderInfo.renderer, bounds.x, bounds.y + height, bounds.x + bounds.w, bounds.y + height); //long grid line
+                    }
+                    drawText(renderInfo.renderer, renderInfo.robotoSmall, numAsStr(value) + graphDescriptions[0].ySuffix, bounds.x - PADDING_TEXT_LEFT, bounds.y + height - LETTER_HEIGHT / 2, 1.0, 0);
+                }
             }
-            for (let i = 0; i < 5; i++) { //x axis
-                let height = mapNum(i, 0.0, 4.0, PADDING, (bounds.w - PADDING));
-                let value = floor(mapNum(i, 0.0, 4.0, minX, maxX) * 100.0 + 0.5) / 100.0;
+            
+            for (let i = 0; i < xAxisLineCount; i++) { //x axis
+                let height = mapNum(i, 0.0, xAxisLineCount - 1, PADDING, (bounds.w - PADDING));
+                let value = floor(mapNum(i, 0.0, xAxisLineCount - 1, minX, maxX) * 100.0 + 0.5) / 100.0;
 
-                SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-                SDL_RenderDrawLine(renderInfo.renderer, bounds.x + height, bounds.y + bounds.h + 6, bounds.x + height, bounds.y + bounds.h - 2); //number indent
-                SDL_SetRenderDrawColor(renderInfo.renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
-                SDL_RenderDrawLine(renderInfo.renderer, bounds.x + height, bounds.y, bounds.x + height, bounds.y + bounds.h); //long grid line
-
+                if (xAxisVisible) {
+                    SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+                    SDL_RenderDrawLine(renderInfo.renderer, bounds.x + height, bounds.y + bounds.h + 6, bounds.x + height, bounds.y + bounds.h - 2); //number indent
+                }
+                if (xGridVisible) {
+                    SDL_SetRenderDrawColor(renderInfo.renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
+                    SDL_RenderDrawLine(renderInfo.renderer, bounds.x + height, bounds.y, bounds.x + height, bounds.y + bounds.h); //long grid line
+                }
                 drawText(renderInfo.renderer, renderInfo.robotoSmall, numAsStr(value) + graphDescriptions[0].xSuffix, bounds.x + height, bounds.y + bounds.h + PADDING_TEXT_BOTTOM, 0.5, 0.0);
             }
+            
         }
 
-        // draw lines
         for (let graphDesc of graphDescriptions) {
-            //console.log(graphDesc);
-            let points: GraphPoint[] = [];
-            for (let i = 0; i < graphDesc.indices.length; i++) {
-                let index = graphDesc.indices[i]
-                let val = graphDesc.values[i]
-                if (index != null && val != null) {
-                    points.push(new GraphPoint(index, val));
-                }
-            }
+            switch (graphDesc.graphStyle) {
+                case "line":
+                {
+                    // draw lines
+                
+                    //console.log(graphDesc);
+                    let points: GraphPoint[] = [];
+                    for (let i = 0; i < graphDesc.indices.length; i++) {
+                        let index = graphDesc.indices[i]
+                        let val = graphDesc.values[i]
+                        if (index != null && val != null) {
+                            points.push(new GraphPoint(index, val));
+                        }
+                    }
 
-            SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 200, SDL_ALPHA_OPAQUE);
-            context.strokeStyle = graphDesc.strokeStyle;
+                    SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 200, SDL_ALPHA_OPAQUE);
+                    context.strokeStyle = graphDesc.strokeStyle;
 
-            let pointCount = points.length;
+                    let pointCount = points.length;
 
 
-            let lastPoint: GraphPoint = new GraphPoint(0,0);
-            let lastPointIsNull: boolean = true;
+                    let lastPoint: GraphPoint = new GraphPoint(0,0);
+                    let lastPointIsNull: boolean = true;
 
-            let shouldDrawEvery: number = 1// Math.floor(Math.max(1, pointCount / 50));
+                    let shouldDrawEvery: number = 1// Math.floor(Math.max(1, pointCount / 50));
 
-            let i = 0;
-            for (let point of points) {
-                if (!lastPointIsNull) {
-                    let lastPointY = (bounds.y * 2 + bounds.h) - mapNum(lastPoint.y, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING);
-                    let pointY = (bounds.y * 2 + bounds.h) - mapNum(point.y, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING);
-
-                    if (i % shouldDrawEvery == 0 || i == points.length - 1 || abs(lastPointY - pointY) > 5) {
+                    let i = 0;
+                    for (let point of points) {
                         if (!lastPointIsNull) {
+                            let lastPointY = (bounds.y * 2 + bounds.h) - mapNum(lastPoint.y, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING);
+                            let pointY = (bounds.y * 2 + bounds.h) - mapNum(point.y, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING);
 
-                            let lastPointX = mapNum(lastPoint.x, minX, maxX, bounds.x + PADDING, bounds.x + bounds.w - PADDING);
+                            if (i % shouldDrawEvery == 0 || i == points.length - 1 || abs(lastPointY - pointY) > 5) {
+                                if (!lastPointIsNull) {
+
+                                    let lastPointX = mapNum(lastPoint.x, minX, maxX, bounds.x + PADDING, bounds.x + bounds.w - PADDING);
 
 
-                            let pointX = mapNum(point.x, minX, maxX, bounds.x + PADDING, bounds.x + bounds.w - PADDING);
+                                    let pointX = mapNum(point.x, minX, maxX, bounds.x + PADDING, bounds.x + bounds.w - PADDING);
 
-                            /*
-                            int lastPointX = (int)((lastPoint.x - abs(minX)) / maxX * bounds.w) + bounds.x;
-                            int lastPointY = (int)(((maxY - lastPoint.y) - abs(minY)) / maxY * bounds.h) + bounds.y;
+                                    /*
+                                    int lastPointX = (int)((lastPoint.x - abs(minX)) / maxX * bounds.w) + bounds.x;
+                                    int lastPointY = (int)(((maxY - lastPoint.y) - abs(minY)) / maxY * bounds.h) + bounds.y;
 
-                            int pointX = (int)((point.x - abs(minX)) / maxX * bounds.w) + bounds.x;
-                            int pointY = (int)(((maxY - point.y) - abs(minY)) / maxY * bounds.h) + bounds.y;
-                            */
+                                    int pointX = (int)((point.x - abs(minX)) / maxX * bounds.w) + bounds.x;
+                                    int pointY = (int)(((maxY - point.y) - abs(minY)) / maxY * bounds.h) + bounds.y;
+                                    */
 
-                            SDL_RenderDrawLine(renderInfo.renderer, lastPointX, lastPointY, pointX, pointY);
+                                    SDL_RenderDrawLine(renderInfo.renderer, lastPointX, lastPointY, pointX, pointY);
+                                }
+
+                                lastPoint = point;
+                                lastPointIsNull = false;
+                            }
+                        }
+                        else {
+                            lastPoint = point;
+                            lastPointIsNull = false;
                         }
 
-                        lastPoint = point;
-                        lastPointIsNull = false;
+                        i++;
                     }
+                
+                    break;
                 }
-                else {
-                    lastPoint = point;
-                    lastPointIsNull = false;
-                }
+                case "bar":
+                {
+                    // draw bars
+                    let points: GraphPoint[] = [];
+                    for (let i = 0; i < graphDesc.indices.length; i++) {
+                        let index = graphDesc.indices[i]
+                        let val = graphDesc.values[i]
+                        if (index != null && val != null) {
+                            points.push(new GraphPoint(index, val));
+                        }
+                    }
 
-                i++;
+                    SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 200, SDL_ALPHA_OPAQUE);
+                    context.strokeStyle = graphDesc.strokeStyle;
+                    context.fillStyle = graphDesc.strokeStyle;
+
+                    let pointCount = points.length;
+
+                    let i = 0;
+                    for (let point of points) {
+                            let pointY = (bounds.y * 2 + bounds.h) - mapNum(point.y, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING);
+                            let pointX = mapNum(point.x, minX, maxX, bounds.x + PADDING, bounds.x + bounds.w - PADDING);
+                            let width = bounds.w / points.length * graphDesc.widthPercentage
+                            context.fillRect(pointX - width / 2,bounds.y + pointY - bounds.y,width, bounds.h - (pointY - bounds.y));
+                        i++;
+                    }
+                    
+                    break;
+                }
             }
         }
+        
 
         /*let candidatePoints: [number,number][] = []
         let candidateStrokes: string[] = []
@@ -279,40 +343,42 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown",
         //draw color infos for each graph
         let i = 0;
         for (let graphDesc of graphDescriptions) {
-            SDL_SetRenderDrawColor(renderInfo.renderer, 255, 255, 255, 0.5);
+            if (graphDesc.hasLabel) {
+                SDL_SetRenderDrawColor(renderInfo.renderer, 255, 255, 255, 0.5);
 
-            context.font = renderInfo.robotoSmall + "px Roboto"
-            let textMeasure = context.measureText(graphDesc.name);
-            let strWidth = textMeasure.width;
-            let strHeight = textMeasure.actualBoundingBoxAscent;
+                context.font = renderInfo.robotoSmall + "px Roboto"
+                let textMeasure = context.measureText(graphDesc.name);
+                let strWidth = textMeasure.width;
+                let strHeight = textMeasure.actualBoundingBoxAscent;
 
-            const rightOffset = 5;
-            const textOffset = 16;
-            const lineWidth = 12;
-            const lineOffset = 3;
+                const rightOffset = 5;
+                const textOffset = 16;
+                const lineWidth = 12;
+                const lineOffset = 3;
 
-            let ux = bounds.x + 5;
-            let uy = bounds.y + 5 + 25 * i;
-            let w = textOffset + strWidth + rightOffset;
-            let h = 20;
+                let ux = bounds.x + 5;
+                let uy = bounds.y + 5 + 25 * i;
+                let w = textOffset + strWidth + rightOffset;
+                let h = 20;
 
-            context.fillRect(ux, uy, w, h);
+                context.fillRect(ux, uy, w, h);
 
-            context.lineWidth = 1;
-            SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-            SDL_RenderDrawLine(context, ux, uy, ux + w, uy);
-            SDL_RenderDrawLine(context, ux + w, uy, ux + w, uy + h);
-            SDL_RenderDrawLine(context, ux + w, uy + h, ux, uy + h);
-            SDL_RenderDrawLine(context, ux, uy + h, ux, uy);
+                context.lineWidth = 1;
+                SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+                SDL_RenderDrawLine(context, ux, uy, ux + w, uy);
+                SDL_RenderDrawLine(context, ux + w, uy, ux + w, uy + h);
+                SDL_RenderDrawLine(context, ux + w, uy + h, ux, uy + h);
+                SDL_RenderDrawLine(context, ux, uy + h, ux, uy);
 
-            drawText(context, renderInfo.robotoSmall, graphDesc.name, ux + textOffset, uy + 3, 0, 0);
+                drawText(context, renderInfo.robotoSmall, graphDesc.name, ux + textOffset, uy + 3, 0, 0);
 
-            context.strokeStyle = graphDesc.strokeStyle;
-            context.lineWidth = 3;
-            context.globalAlpha = 1;
-            SDL_RenderDrawLine(context, ux + lineOffset, uy + h / 2, ux + lineWidth + lineOffset, uy + h / 2);
+                context.strokeStyle = graphDesc.strokeStyle;
+                context.lineWidth = 3;
+                context.globalAlpha = 1;
+                SDL_RenderDrawLine(context, ux + lineOffset, uy + h / 2, ux + lineWidth + lineOffset, uy + h / 2);
 
-            i++;
+                i++;
+            }
         }
 
         /*SDL_RenderDrawLine(renderInfo.renderer, bounds.x + PADDING, bounds.y + bounds.h + 2, bounds.x + PADDING, bounds.y + bounds.h - 2);
