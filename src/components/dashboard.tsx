@@ -61,6 +61,7 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     bmpTemperatureGD.ySuffix = "°C";
     bmpTemperatureGD.name = "BMP";
     bmpTemperatureGD.strokeStyle = "#ff5959"
+    //bmpTemperatureGD.marker = "circle";
     bmpTemperatureGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.T};
     bmpTemperatureGD.indexFunc = millisIndexFunc;
     bmpTemperatureGD.invalidFunc = (val: number) => {
@@ -96,12 +97,13 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     gpsAltitudeGD.invalidFunc = (val: number) => {
         return val <= -0.899 || val >= 10000 || isNaN(val);
     }
-
+    
     const bmpAltitudeGD = new GraphDescription(serialData, serialData);
     bmpAltitudeGD.name = "BMP";
     bmpAltitudeGD.xSuffix = "s";
     bmpAltitudeGD.ySuffix = "m";
-    bmpAltitudeGD.strokeStyle = "#ff5959"
+    bmpAltitudeGD.strokeStyle = "#ff5959";
+    //bmpAltitudeGD.marker = "circle";
     bmpAltitudeGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.ALT - serialDataGroup.baseALT};
     bmpAltitudeGD.indexFunc = millisIndexFunc;
     bmpAltitudeGD.invalidFunc = (val: number) => {

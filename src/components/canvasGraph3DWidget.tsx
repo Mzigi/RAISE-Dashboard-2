@@ -194,14 +194,14 @@ export class GraphDescription3 {
     }
 }
 
-function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, widgetName: string, graphDescs: GraphDescription3[], markedPoints: Vector3[], rssi: [number,number,number], setMarkedPoints?: Function) {
+function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, widgetName: string, graphDescs: GraphDescription3[], markedPoints: Vector3[], rssi: [number,number,number], setMarkedPoints?: Function, scale: number = 1) {
     if (canvas.width != canvas.clientWidth || canvas.height != canvas.clientHeight) {
         canvas.width = canvas.clientWidth
         canvas.height = canvas.clientHeight
     }
     const resolution: Vector2 = new Vector2(canvas.width, canvas.height);
 
-    context.lineWidth = 2;
+    context.lineWidth = 2 * scale;
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     //update
@@ -233,7 +233,7 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
     let stepX = graphWidth / (gridResolution - 1)
     let stepY = graphHeight / (gridResolution - 1)
 
-    context.lineWidth = 1.5
+    context.lineWidth = 1.5 * scale
 
     SDL_SetRenderDrawColor(context, 200, 200, 200, SDL_ALPHA_OPAQUE);
     context.beginPath();
@@ -400,7 +400,7 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
 
         context.fillRect(ux, uy, w, h);
 
-        context.lineWidth = 1;
+        context.lineWidth = 1 * scale;
         SDL_SetRenderDrawColor(context, 0, 0, 0, SDL_ALPHA_OPAQUE);
         SDL_RenderDrawLine(context, ux, uy, ux + w, uy);
         SDL_RenderDrawLine(context, ux + w, uy, ux + w, uy + h);
@@ -410,7 +410,7 @@ function render(camera: Camera, canvas: HTMLCanvasElement, context: CanvasRender
         drawText(context, 18, graphDesc.name, ux + textOffset, uy + 3, 0, 0);
 
         context.strokeStyle = graphDesc.strokeStyle;
-        context.lineWidth = 3;
+        context.lineWidth = 3 * scale;
         context.globalAlpha = 1;
         SDL_RenderDrawLine(context, ux + lineOffset, uy + h / 2, ux + lineWidth + lineOffset, uy + h / 2);
 
@@ -590,7 +590,7 @@ function wheelListener(evt: WheelEvent) {
     evt.preventDefault();
 }
 
-export default function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], markedPoints = [], setMarkedPoints } : { widgetName?: string, graphDescs?: GraphDescription3[], markedPoints?: Vector3[], setMarkedPoints?: Function }) {
+export default function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], markedPoints = [], setMarkedPoints, scale = 1 } : { widgetName?: string, graphDescs?: GraphDescription3[], markedPoints?: Vector3[], setMarkedPoints?: Function, scale?: number }) {
     const canvasRef = useRef(null); 
     const cameraRef = useRef(new Camera(new Vector3(0.7, 0, 5.29)));
 
@@ -612,7 +612,7 @@ export default function CanvasGraph3DWidget({ widgetName = "", graphDescs = [], 
         if (!context) return () => {};
         
         updateOrbitalCamera(camera, new Vector2(0,0));
-        render(camera, canvas, context, widgetName, graphDescs, markedPoints, rssi, setMarkedPoints);
+        render(camera, canvas, context, widgetName, graphDescs, markedPoints, rssi, setMarkedPoints, scale);
 
         return () => {
             canvas.removeEventListener("mousemove", mouseMoveListener);

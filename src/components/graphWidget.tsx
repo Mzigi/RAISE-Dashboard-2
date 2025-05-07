@@ -20,6 +20,9 @@ function numAsStr(num: number): string {
     return (Math.round(num * 10)/10).toString();
 }
 
+export type MarkerType = null | "circle" | string;
+export type GraphStyle = "line" | "bar"
+
 export class GraphDescription {
     private _real_indices: Array<number> | undefined;
     private _real_values: Array<number> | undefined;
@@ -44,6 +47,7 @@ export class GraphDescription {
     xSuffix: string = "";
     ySuffix: string = "";
 
+    marker: MarkerType = null;
     hasLabel: boolean = true;
     graphStyle: GraphStyle = "line";
 
@@ -86,8 +90,6 @@ export class GraphDescription {
         this._values = values;
     }
 }
-
-export type GraphStyle = "line" | "bar"
 
 export default function GraphWidget({ graphDescriptions, widgetName = "Unknown", leftPadding = 70, graphStyle = "line", yGridVisible = true, yAxisVisible = true, xGridVisible = true, xAxisVisible = true, yAxisLineCount = 5, xAxisLineCount = 5, scale = 1 }: { graphDescriptions: GraphDescription[], widgetName?: string, leftPadding?: number, graphStyle?: GraphStyle, yGridVisible?: boolean, yAxisVisible?: boolean, xGridVisible?: boolean, xAxisVisible?: boolean, yAxisLineCount?: number, xAxisLineCount?: number, scale?: number }): React.JSX.Element {
     const canvasRef = useRef(null); 
@@ -239,6 +241,25 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown",
                                     */
 
                                     SDL_RenderDrawLine(renderInfo.renderer, lastPointX, lastPointY, pointX, pointY);
+
+                                    if (graphDesc.marker != null) {
+                                        let markSize = 3 * scale;
+
+                                        context.fillStyle = graphDesc.strokeStyle;
+                                        if (graphDesc.marker == "circle") {
+                                            context.beginPath();
+                                            context.arc(pointX, pointY, markSize, 0, 360);
+                                            context.fill();
+                                            context.closePath();
+                                        } else {
+                                            //drawText(context, markSize, "x", pointX, pointY - markSize / 2, 0.5, 0);
+                                            context.font = markSize + "p Arial";
+                                            let textMeasure = context.measureText(graphDesc.marker);
+                                            let strWidth = textMeasure.width;
+                                            let strHeight = textMeasure.actualBoundingBoxAscent;
+                                            context.fillText(graphDesc.marker, pointX - strWidth / 2, pointY + strHeight / 2);
+                                        }
+                                    }
                                 }
 
                                 lastPoint = point;
