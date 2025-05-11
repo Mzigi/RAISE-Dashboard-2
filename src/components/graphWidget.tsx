@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import SerialConnectionData from "../common/serialConnectionData";
 import { useMouseMove } from "../common/useMouseMove/useMouseMove";
-import { abs, drawText, floor, GraphPoint, mapNum, SDL_ALPHA_OPAQUE, SDL_RenderDrawLine, SDL_SetRenderDrawColor, UIBoundary } from "../common/sdlLayer";
+import { abs, clamp, drawText, floor, GraphPoint, mapNum, positionIsInBoundaries, SDL_ALPHA_OPAQUE, SDL_RenderDrawLine, SDL_SetRenderDrawColor, UIBoundary } from "../common/sdlLayer";
 
 const shrinkArray = (array: any[], size: number) => {
     const step = array.length / size
@@ -21,7 +21,7 @@ function numAsStr(num: number): string {
 }
 
 export type MarkerType = null | "circle" | string;
-export type GraphStyle = "line" | "bar"
+export type GraphStyle = "line" | "bar" | "invisible_line";
 
 export class GraphDescription {
     private _real_indices: Array<number> | undefined;
@@ -38,7 +38,8 @@ export class GraphDescription {
     invalidFunc: (val: any) => boolean = (val: any): boolean => {return false};
 
     strokeStyle: string = "#426cf5";
-    name: string = "Unknown";
+    markerStyle?: string = undefined;
+    name?: string = undefined;
     widthPercentage: number = 0.8; //for graph styles with width, bars
 
     maxMinY?: number = undefined;
@@ -48,6 +49,7 @@ export class GraphDescription {
     ySuffix: string = "";
 
     marker: MarkerType = null;
+    markerSize: number = 3;
     hasLabel: boolean = true;
     graphStyle: GraphStyle = "line";
 
@@ -91,7 +93,7 @@ export class GraphDescription {
     }
 }
 
-export default function GraphWidget({ graphDescriptions, widgetName = "Unknown", leftPadding = 70, graphStyle = "line", yGridVisible = true, yAxisVisible = true, xGridVisible = true, xAxisVisible = true, yAxisLineCount = 5, xAxisLineCount = 5, scale = 1 }: { graphDescriptions: GraphDescription[], widgetName?: string, leftPadding?: number, graphStyle?: GraphStyle, yGridVisible?: boolean, yAxisVisible?: boolean, xGridVisible?: boolean, xAxisVisible?: boolean, yAxisLineCount?: number, xAxisLineCount?: number, scale?: number }): React.JSX.Element {
+export default function GraphWidget({ graphDescriptions, widgetName = "Unknown", leftPadding = 70, graphStyle = "line", yGridVisible = true, yAxisVisible = true, xGridVisible = true, xAxisVisible = true, yAxisLineCount = 5, xAxisLineCount = 5, scale = 1, padding = 12 }: { graphDescriptions: GraphDescription[], widgetName?: string, leftPadding?: number, graphStyle?: GraphStyle, yGridVisible?: boolean, yAxisVisible?: boolean, xGridVisible?: boolean, xAxisVisible?: boolean, yAxisLineCount?: number, xAxisLineCount?: number, scale?: number, padding?: number }): React.JSX.Element {
     const canvasRef = useRef(null); 
     let xyMousePos = useMouseMove(1000 / 30, "client");
     let mousePos = [xyMousePos.x, xyMousePos.y];
@@ -117,7 +119,7 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown",
         }
 
         leftPadding *= scale;
-        const PADDING = 12 * scale;
+        const PADDING = padding * scale;
         const PADDING_TEXT_LEFT = 10 * scale;
         const PADDING_TEXT_BOTTOM = 8 * scale;
         const LETTER_HEIGHT = 18 * scale;
@@ -164,7 +166,7 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown",
 
                     if (yAxisVisible) {
                         SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-                        SDL_RenderDrawLine(renderInfo.renderer, bounds.x + 2, bounds.y + height, bounds.x - 6, bounds.y + height); //number indent
+                        SDL_RenderDrawLine(renderInfo.renderer, bounds.x + 2 * scale, bounds.y + height, bounds.x - 6 * scale, bounds.y + height); //number indent
                     }
                     if (yGridVisible) {
                         SDL_SetRenderDrawColor(renderInfo.renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
@@ -180,7 +182,7 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown",
 
                 if (xAxisVisible) {
                     SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-                    SDL_RenderDrawLine(renderInfo.renderer, bounds.x + height, bounds.y + bounds.h + 6, bounds.x + height, bounds.y + bounds.h - 2); //number indent
+                    SDL_RenderDrawLine(renderInfo.renderer, bounds.x + height, bounds.y + bounds.h + 6 * scale, bounds.x + height, bounds.y + bounds.h - 2 * scale); //number indent
                 }
                 if (xGridVisible) {
                     SDL_SetRenderDrawColor(renderInfo.renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
@@ -192,134 +194,132 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown",
         }
 
         for (let graphDesc of graphDescriptions) {
-            switch (graphDesc.graphStyle) {
-                case "line":
-                {
-                    // draw lines
-                
-                    //console.log(graphDesc);
-                    let points: GraphPoint[] = [];
-                    for (let i = 0; i < graphDesc.indices.length; i++) {
-                        let index = graphDesc.indices[i]
-                        let val = graphDesc.values[i]
-                        if (index != null && val != null) {
-                            points.push(new GraphPoint(index, val));
-                        }
+            if (graphDesc.graphStyle.includes("line")) {
+                // draw lines
+            
+                //console.log(graphDesc);
+                let points: GraphPoint[] = [];
+                for (let i = 0; i < graphDesc.indices.length; i++) {
+                    let index = graphDesc.indices[i]
+                    let val = graphDesc.values[i]
+                    if (index != null && val != null) {
+                        points.push(new GraphPoint(index, val));
                     }
+                }
 
-                    SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 200, SDL_ALPHA_OPAQUE);
-                    context.strokeStyle = graphDesc.strokeStyle;
+                SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 200, SDL_ALPHA_OPAQUE);
+                context.strokeStyle = graphDesc.strokeStyle;
 
-                    let pointCount = points.length;
-
-
-                    let lastPoint: GraphPoint = new GraphPoint(0,0);
-                    let lastPointIsNull: boolean = true;
-
-                    let shouldDrawEvery: number = 1// Math.floor(Math.max(1, pointCount / 50));
-
-                    let i = 0;
-                    for (let point of points) {
-                        if (!lastPointIsNull) {
-                            let lastPointY = (bounds.y * 2 + bounds.h) - mapNum(lastPoint.y, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING);
-                            let pointY = (bounds.y * 2 + bounds.h) - mapNum(point.y, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING);
-
-                            if (i % shouldDrawEvery == 0 || i == points.length - 1 || abs(lastPointY - pointY) > 5) {
-                                if (!lastPointIsNull) {
-
-                                    let lastPointX = mapNum(lastPoint.x, minX, maxX, bounds.x + PADDING, bounds.x + bounds.w - PADDING);
+                let pointCount = points.length;
 
 
-                                    let pointX = mapNum(point.x, minX, maxX, bounds.x + PADDING, bounds.x + bounds.w - PADDING);
+                let lastPoint: GraphPoint = new GraphPoint(0,0);
+                let lastPointIsNull: boolean = true;
 
-                                    /*
-                                    int lastPointX = (int)((lastPoint.x - abs(minX)) / maxX * bounds.w) + bounds.x;
-                                    int lastPointY = (int)(((maxY - lastPoint.y) - abs(minY)) / maxY * bounds.h) + bounds.y;
+                let shouldDrawEvery: number = 1// Math.floor(Math.max(1, pointCount / 50));
 
-                                    int pointX = (int)((point.x - abs(minX)) / maxX * bounds.w) + bounds.x;
-                                    int pointY = (int)(((maxY - point.y) - abs(minY)) / maxY * bounds.h) + bounds.y;
-                                    */
+                let i = 0;
+                for (let point of points) {
+                    if (!lastPointIsNull) {
+                        let lastPointY = (bounds.y * 2 + bounds.h) - mapNum(lastPoint.y, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING);
+                        let pointY = (bounds.y * 2 + bounds.h) - mapNum(point.y, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING);
 
+                        if (i % shouldDrawEvery == 0 || i == points.length - 1 || abs(lastPointY - pointY) > 5) {
+                            if (!lastPointIsNull) {
+
+                                let lastPointX = mapNum(lastPoint.x, minX, maxX, bounds.x + PADDING, bounds.x + bounds.w - PADDING);
+
+
+                                let pointX = mapNum(point.x, minX, maxX, bounds.x + PADDING, bounds.x + bounds.w - PADDING);
+
+                                /*
+                                int lastPointX = (int)((lastPoint.x - abs(minX)) / maxX * bounds.w) + bounds.x;
+                                int lastPointY = (int)(((maxY - lastPoint.y) - abs(minY)) / maxY * bounds.h) + bounds.y;
+
+                                int pointX = (int)((point.x - abs(minX)) / maxX * bounds.w) + bounds.x;
+                                int pointY = (int)(((maxY - point.y) - abs(minY)) / maxY * bounds.h) + bounds.y;
+                                */
+
+                                if (graphDesc.graphStyle !== "invisible_line") {
                                     SDL_RenderDrawLine(renderInfo.renderer, lastPointX, lastPointY, pointX, pointY);
-
-                                    if (graphDesc.marker != null) {
-                                        let markSize = 3 * scale;
-
-                                        context.fillStyle = graphDesc.strokeStyle;
-                                        if (graphDesc.marker == "circle") {
-                                            context.beginPath();
-                                            context.arc(pointX, pointY, markSize, 0, 360);
-                                            context.fill();
-                                            context.closePath();
-                                        } else {
-                                            //drawText(context, markSize, "x", pointX, pointY - markSize / 2, 0.5, 0);
-                                            context.font = markSize + "p Arial";
-                                            let textMeasure = context.measureText(graphDesc.marker);
-                                            let strWidth = textMeasure.width;
-                                            let strHeight = textMeasure.actualBoundingBoxAscent;
-                                            context.fillText(graphDesc.marker, pointX - strWidth / 2, pointY + strHeight / 2);
-                                        }
-                                    }
                                 }
 
-                                lastPoint = point;
-                                lastPointIsNull = false;
+                                if (graphDesc.marker != null) {
+                                    let markSize = graphDesc.markerSize * scale;
+
+                                    context.fillStyle = graphDesc.markerStyle || graphDesc.strokeStyle;
+                                    if (graphDesc.marker == "circle") {
+                                        context.beginPath();
+                                        context.arc(pointX, pointY, markSize, 0, 360);
+                                        context.fill();
+                                        context.closePath();
+                                    } else {
+                                        //drawText(context, markSize, "x", pointX, pointY - markSize / 2, 0.5, 0);
+                                        context.font = markSize + "p Arial";
+                                        let textMeasure = context.measureText(graphDesc.marker);
+                                        let strWidth = textMeasure.width;
+                                        let strHeight = textMeasure.actualBoundingBoxAscent;
+                                        context.fillText(graphDesc.marker, pointX - strWidth / 2, pointY + strHeight / 2);
+                                    }
+                                }
                             }
-                        }
-                        else {
+
                             lastPoint = point;
                             lastPointIsNull = false;
                         }
-
-                        i++;
                     }
-                
-                    break;
-                }
-                case "bar":
-                {
-                    // draw bars
-                    let points: GraphPoint[] = [];
-                    for (let i = 0; i < graphDesc.indices.length; i++) {
-                        let index = graphDesc.indices[i]
-                        let val = graphDesc.values[i]
-                        if (index != null && val != null) {
-                            points.push(new GraphPoint(index, val));
-                        }
+                    else {
+                        lastPoint = point;
+                        lastPointIsNull = false;
                     }
 
-                    SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 200, SDL_ALPHA_OPAQUE);
-                    context.strokeStyle = graphDesc.strokeStyle;
-                    context.fillStyle = graphDesc.strokeStyle;
-
-                    let pointCount = points.length;
-
-                    let i = 0;
-                    for (let point of points) {
-                            let pointY = (bounds.y * 2 + bounds.h) - mapNum(point.y, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING);
-                            let zeroPointY = Math.max(Math.min((bounds.y * 2 + bounds.h) - mapNum(0, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING), bounds.y + bounds.h), bounds.y);
-                            let pointX = mapNum(point.x, minX, maxX, bounds.x + PADDING, bounds.x + bounds.w - PADDING);
-                            let width = bounds.w / points.length * graphDesc.widthPercentage
-                            //context.fillRect(pointX - width / 2, bounds.y + pointY - bounds.y, width, bounds.h - (pointY - bounds.y));
-                            context.fillRect(pointX - width / 2, pointY, width, zeroPointY - pointY);
-                        i++;
-                    }
-                    
-                    break;
+                    i++;
                 }
             }
+            else if (graphDesc.graphStyle == "bar")
+            {
+                // draw bars
+                let points: GraphPoint[] = [];
+                for (let i = 0; i < graphDesc.indices.length; i++) {
+                    let index = graphDesc.indices[i]
+                    let val = graphDesc.values[i]
+                    if (index != null && val != null) {
+                        points.push(new GraphPoint(index, val));
+                    }
+                }
+
+                SDL_SetRenderDrawColor(renderInfo.renderer, 0, 0, 200, SDL_ALPHA_OPAQUE);
+                context.strokeStyle = graphDesc.strokeStyle;
+                context.fillStyle = graphDesc.strokeStyle;
+
+                let pointCount = points.length;
+
+                let i = 0;
+                for (let point of points) {
+                        let pointY = (bounds.y * 2 + bounds.h) - mapNum(point.y, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING);
+                        let zeroPointY = Math.max(Math.min((bounds.y * 2 + bounds.h) - mapNum(0, minY, maxY, bounds.y + PADDING, bounds.y + bounds.h - PADDING), bounds.y + bounds.h), bounds.y);
+                        let pointX = mapNum(point.x, minX, maxX, bounds.x + PADDING, bounds.x + bounds.w - PADDING);
+                        let width = bounds.w / points.length * graphDesc.widthPercentage
+                        //context.fillRect(pointX - width / 2, bounds.y + pointY - bounds.y, width, bounds.h - (pointY - bounds.y));
+                        context.fillRect(pointX - width / 2, pointY, width, zeroPointY - pointY);
+                    i++;
+                }
+            }
+            
         }
         
-
-        /*let candidatePoints: [number,number][] = []
+        /*
+        let candidatePoints: [number,number][] = []
         let candidateStrokes: string[] = []
 
         for (let graphDesc of graphDescriptions) {
             if (mousePos && positionIsInBoundaries(canvas, canvas.width, canvas.height, mousePos[0], mousePos[1]) && graphDesc.indices.length >= 2) {
                 let mousexTransformed = (mousePos[0] - 40) //70 is LEFT_PADDING
                 let closestPointIndex = Math.floor(clamp(mapNum(mousexTransformed, bounds.x + PADDING, bounds.x + bounds.w - PADDING - 40, 0.0, graphDesc.indices.length - 1), 0, graphDesc.indices.length - 1));
-                candidatePoints.push([graphDesc.indices[closestPointIndex], graphDesc.values[closestPointIndex]]);
-                candidateStrokes.push(graphDesc.strokeStyle)
+                if (graphDesc.indices[closestPointIndex] && graphDesc.values[closestPointIndex]) {
+                    candidatePoints.push([graphDesc.indices[closestPointIndex], graphDesc.values[closestPointIndex]]);
+                    candidateStrokes.push(graphDesc.strokeStyle)
+                }
             }
         }
 
@@ -367,7 +367,7 @@ export default function GraphWidget({ graphDescriptions, widgetName = "Unknown",
         //draw color infos for each graph
         let i = 0;
         for (let graphDesc of graphDescriptions) {
-            if (graphDesc.hasLabel) {
+            if (graphDesc.hasLabel && graphDesc.name) {
                 SDL_SetRenderDrawColor(renderInfo.renderer, 255, 255, 255, 0.5);
 
                 context.font = renderInfo.robotoSmall + "px Roboto"

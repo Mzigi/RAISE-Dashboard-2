@@ -60,8 +60,10 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     bmpTemperatureGD.xSuffix = "s";
     bmpTemperatureGD.ySuffix = "°C";
     bmpTemperatureGD.name = "BMP";
-    bmpTemperatureGD.strokeStyle = "#ff5959"
+    bmpTemperatureGD.strokeStyle = "#ff5959"; //"rgba(255, 89, 89, 0.5)"
     //bmpTemperatureGD.marker = "circle";
+    bmpTemperatureGD.graphStyle = "line";
+    bmpTemperatureGD.markerStyle = "#ff5959";
     bmpTemperatureGD.valueFunc = (serialDataGroup: SerialDataGroup) => {return serialDataGroup.T};
     bmpTemperatureGD.indexFunc = millisIndexFunc;
     bmpTemperatureGD.invalidFunc = (val: number) => {
@@ -262,7 +264,6 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     }
 
     //missing data
-    
     let missingPoints: number[] = [];
 
     let largestI = 0;
@@ -276,6 +277,8 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
         }
     }
 
+    console.log(largestI - lowestI);
+    let totalICount = 0;
     for (let i = lowestI; i <= largestI; i++) {
         let foundPoint = false;
         let pointCorrupt = false;
@@ -290,14 +293,17 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
 
         if (!foundPoint || pointCorrupt) {
             missingPoints.push(i);
+        } else {
+            totalICount++;
         }
     }
+    console.log(totalICount);
 
     const missingDataGD = new GraphDescription(missingPoints, missingPoints);
     missingDataGD.name = "Missing Data";
     missingDataGD.xSuffix = "s";
     missingDataGD.ySuffix = "";
-    missingDataGD.strokeStyle = "#999";
+    missingDataGD.strokeStyle = "rgba(0,0,0,0.5)";
     missingDataGD.maxMinY = 23
     //missingDataGD.maxMinX = 0;
     missingDataGD.graphStyle = "bar";
@@ -322,6 +328,7 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
         panelGD.ySuffix = "V";
         panelGD.maxMinY = 0;
         panelGD.name = "Panel " + (i + 1);
+        panelGD.marker = "circle";
         panelGD.strokeStyle = [panelGD.strokeStyle, "#ff5959", "#1f8f3d", "#c2b611"][i];
         panelGD.valueFunc = (serialDataGroup: SerialDataGroup) => {
             if (serialDataGroup.P.get(i) >= 1023) {
@@ -334,6 +341,28 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
             return val <= -1;
         }
         panelDescriptions.push(panelGD);
+    }
+
+    const barChartTest = new GraphDescription([100,200,300,400,500], [500,400,200,400,800]);
+    barChartTest.graphStyle = "bar";
+
+    const joGrafGD = new GraphDescription([22.1,22.5,23.2,23.9,24.1,24.8,24.9],[37.5, 37.4,37.3,37.0,36.9,36.5,36.4]);
+    joGrafGD.marker = "circle";
+    joGrafGD.markerSize = 6;
+    //joGrafGD.markerStyle = "rgb(255,89,89)";
+    joGrafGD.strokeStyle = "#00f";
+    joGrafGD.name = "K";
+    joGrafGD.xSuffix = "°C";
+    joGrafGD.ySuffix = "%";
+
+    let indices = []
+    for (let i = 0; i < 100; i++) {
+        indices.push(i / 10);
+    }
+
+    const funcGraphGD = new GraphDescription(indices, indices);
+    funcGraphGD.valueFunc = (val: any) => {
+        return -2*Math.pow(val,3) + 9*val*val - 4;
     }
 
     return (
@@ -350,8 +379,14 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
         </div>
         <div className="widgets-row">
             <GraphWidget widgetName="Pressure" graphDescriptions={[bmpPressureGD]} leftPadding={100}/>
-            <GraphWidget widgetName="Missing Data" graphDescriptions={[missingDataGD]} yAxisVisible={false} yGridVisible={false} />
-            <GraphWidget graphDescriptions={[analogTemperatureGD, bmpTemperatureGD, missingDataGD]} widgetName={"Temperature"}/>
+            <GraphWidget widgetName="Missing Data" graphDescriptions={[missingDataGD]} yAxisVisible={false} yGridVisible={false} leftPadding={20} />
+            <GraphWidget widgetName="Missing Data" graphDescriptions={[analogTemperatureGD, bmpTemperatureGD, missingDataGD]} scale={1}/>
+        </div>
+        <span className="title">Test graphs (not actual data)</span>
+        <div className="widgets-row">
+            <GraphWidget widgetName="Bar test" padding={48} xGridVisible={false} graphDescriptions={[barChartTest]}/>
+            <GraphWidget widgetName="Temperatur vs Relativ Fuktighet" xAxisLineCount={5} yAxisLineCount={5} graphDescriptions={[joGrafGD]}/>
+            <GraphWidget widgetName="🔵" graphDescriptions={[funcGraphGD]}/>
         </div>
     </div>
     );
