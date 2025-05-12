@@ -304,13 +304,13 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
     missingDataGD.xSuffix = "s";
     missingDataGD.ySuffix = "";
     missingDataGD.strokeStyle = "rgba(0,0,0,0.5)";
-    missingDataGD.maxMinY = 23
+    missingDataGD.maxMinY = 1088
     //missingDataGD.maxMinX = 0;
     missingDataGD.graphStyle = "bar";
     missingDataGD.hasLabel = false;
     missingDataGD.widthPercentage = 0.52;
     missingDataGD.valueFunc = (num: number) => {
-        return 23.5;
+        return 1088;
     };
     missingDataGD.indexFunc = (num: number) => {
         return num * 0.5 - lowestI * 0.5;
@@ -380,7 +380,7 @@ export default function Dashboard({ serialData, stationPositions, sendSerial, se
         <div className="widgets-row">
             <GraphWidget widgetName="Pressure" graphDescriptions={[bmpPressureGD]} leftPadding={100}/>
             <GraphWidget widgetName="Missing Data" graphDescriptions={[missingDataGD]} yAxisVisible={false} yGridVisible={false} leftPadding={20} />
-            <GraphWidget widgetName="Missing Data" graphDescriptions={[analogTemperatureGD, bmpTemperatureGD, missingDataGD]} scale={1}/>
+            <GraphWidget widgetName="Missing Data (Altitude)" graphDescriptions={[bmpAltitudeGD, gpsAltitudeGD, missingDataGD]} scale={2}/>
         </div>
         <span className="title">Test graphs (not actual data)</span>
         <div className="widgets-row">
